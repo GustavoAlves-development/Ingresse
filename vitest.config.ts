@@ -33,6 +33,12 @@ export default defineConfig({
     env: {
       DATABASE_URL: process.env.DATABASE_URL,
     },
+    // Todos os arquivos de teste compartilham o mesmo banco Postgres real
+    // (branch de teste do Neon) e chamam resetDatabase() no beforeEach.
+    // Sem isso, o Vitest roda arquivos de teste em paralelo por padrão e
+    // um arquivo pode apagar as linhas que outro acabou de criar,
+    // causando falhas intermitentes (race condition entre arquivos).
+    fileParallelism: false,
   },
   resolve: {
     alias: {
