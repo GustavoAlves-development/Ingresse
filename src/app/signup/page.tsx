@@ -1,18 +1,33 @@
 import { Prisma } from "@prisma/client";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { signIn } from "@/auth";
 import { hashPassword } from "@/lib/auth/password";
 import { createOrganizerWithAdminUser } from "@/lib/db/organizerRepository";
 
+const signupSchema = z.object({
+  organizerName: z.string().min(1),
+  adminName: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
 async function signupAction(formData: FormData) {
   "use server";
 
-  const organizerName = String(formData.get("organizerName") ?? "");
-  const adminName = String(formData.get("adminName") ?? "");
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
+  const parsed = signupSchema.safeParse({
+    organizerName: formData.get("organizerName"),
+    adminName: formData.get("adminName"),
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
 
+  if (!parsed.success) {
+    redirect("/signup?error=invalid-input");
+  }
+
+  const { organizerName, adminName, email, password } = parsed.data;
   const passwordHash = await hashPassword(password);
 
   try {
@@ -54,7 +69,12 @@ export default async function SignupPage({
     <main className="flex min-h-screen items-center justify-center">
       <form action={signupAction} className="flex w-80 flex-col gap-4">
         <h1 className="text-xl font-semibold">Criar conta de organizador</h1>
-        {error && (
+        {error === "invalid-input" && (
+          <p className="text-sm text-red-500">
+            Preencha todos os campos corretamente.
+          </p>
+        )}
+        {error && error !== "invalid-input" && (
           <p className="text-sm text-red-500">
             Não foi possível criar a conta. Tente outro e-mail.
           </p>

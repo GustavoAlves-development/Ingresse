@@ -1,14 +1,29 @@
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { signIn } from "@/auth";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
 async function loginAction(formData: FormData) {
   "use server";
 
+  const parsed = loginSchema.safeParse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    redirect("/login?error=1");
+  }
+
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
+      email: parsed.data.email,
+      password: parsed.data.password,
       redirectTo: "/admin",
     });
   } catch (error) {
