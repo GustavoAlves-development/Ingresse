@@ -42,7 +42,7 @@ export async function findEventForOrganizer(
 
 export type UpdateEventInput = {
   name: string;
-  description?: string;
+  description?: string | null;
   location: string;
   startsAt: Date;
   ticketPriceCents: number;

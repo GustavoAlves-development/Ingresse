@@ -150,5 +150,30 @@ describe("eventRepository", () => {
       const fetched = await findEventForOrganizer(organizerAId, event.id);
       expect(fetched?.name).toBe("Nome Original");
     });
+
+    it("clears the description when null is passed", async () => {
+      const event = await createEvent(organizerAId, {
+        name: "Evento com descrição",
+        slug: "evento-com-descricao",
+        description: "Descrição original",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-10-01T20:00:00-03:00"),
+        ticketPriceCents: 3000,
+        capacity: 50,
+      });
+
+      await updateEvent(organizerAId, event.id, {
+        name: event.name,
+        description: null,
+        location: event.location,
+        startsAt: event.startsAt,
+        ticketPriceCents: event.ticketPriceCents,
+        capacity: event.capacity,
+        status: "DRAFT",
+      });
+
+      const fetched = await findEventForOrganizer(organizerAId, event.id);
+      expect(fetched?.description).toBeNull();
+    });
   });
 });

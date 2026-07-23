@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { findEventForOrganizer, updateEvent } from "@/lib/db/eventRepository";
+import { toSaoPauloDatetimeLocalValue } from "@/lib/events/eventDateTime";
 import { updateEventSchema } from "@/lib/events/eventSchema";
 
 async function updateEventAction(eventId: string, formData: FormData) {
@@ -37,7 +38,7 @@ async function updateEventAction(eventId: string, formData: FormData) {
 
   const updated = await updateEvent(session.user.organizerId, eventId, {
     name,
-    description: description || undefined,
+    description: description || null,
     location,
     startsAt,
     ticketPriceCents: Math.round(ticketPriceReais * 100),
@@ -50,13 +51,6 @@ async function updateEventAction(eventId: string, formData: FormData) {
   }
 
   redirect("/admin/events");
-}
-
-function toDatetimeLocalValue(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
-  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export default async function EditEventPage({
@@ -110,7 +104,7 @@ export default async function EditEventPage({
         <input
           name="startsAt"
           type="datetime-local"
-          defaultValue={toDatetimeLocalValue(event.startsAt)}
+          defaultValue={toSaoPauloDatetimeLocalValue(event.startsAt)}
           required
           className="rounded border border-gray-700 bg-transparent px-3 py-2"
         />
