@@ -1,6 +1,6 @@
 import { Role } from "@prisma/client";
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetDatabase } from "../../../tests/testDb";
+import { resetDatabase, testPrisma } from "../../../tests/testDb";
 import {
   createOrganizer,
   createOrganizerWithAdminUser,
@@ -68,5 +68,30 @@ describe("createOrganizerWithAdminUser", () => {
         passwordHash: "hash",
       }),
     ).rejects.toThrow();
+  });
+
+  it("rolls back organizer creation when the admin user's email is already in use", async () => {
+    await createOrganizerWithAdminUser({
+      organizerName: "Organizador Existente",
+      organizerEmail: "existente@organizador.dev",
+      adminName: "Admin Existente",
+      adminEmail: "conflito@organizador.dev",
+      passwordHash: "hash",
+    });
+
+    await expect(
+      createOrganizerWithAdminUser({
+        organizerName: "Organizador Novo",
+        organizerEmail: "novo-unico@organizador.dev",
+        adminName: "Admin Novo",
+        adminEmail: "conflito@organizador.dev",
+        passwordHash: "hash",
+      }),
+    ).rejects.toThrow();
+
+    const orphanOrganizer = await testPrisma.organizer.findUnique({
+      where: { email: "novo-unico@organizador.dev" },
+    });
+    expect(orphanOrganizer).toBeNull();
   });
 });
