@@ -1,10 +1,10 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { authConfigEdge } from "./authConfig.edge";
 import { verifyCredentials } from "./verifyCredentials";
 
 export const authConfig: NextAuthConfig = {
-  session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  ...authConfigEdge,
   providers: [
     Credentials({
       credentials: {
@@ -21,20 +21,4 @@ export const authConfig: NextAuthConfig = {
       },
     }),
   ],
-  callbacks: {
-    jwt: async ({ token, user }) => {
-      if (user) {
-        token.userId = user.id;
-        token.organizerId = user.organizerId;
-        token.role = user.role;
-      }
-      return token;
-    },
-    session: async ({ session, token }) => {
-      session.user.id = token.userId;
-      session.user.organizerId = token.organizerId;
-      session.user.role = token.role;
-      return session;
-    },
-  },
 };

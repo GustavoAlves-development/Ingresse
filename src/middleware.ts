@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfigEdge } from "@/lib/auth/authConfig.edge";
 import { isAuthorizedForPath } from "@/lib/auth/routeAccess";
+
+const { auth } = NextAuth(authConfigEdge);
 
 export default auth((request) => {
   const { pathname } = request.nextUrl;
