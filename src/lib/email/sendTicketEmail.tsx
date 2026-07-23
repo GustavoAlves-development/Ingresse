@@ -1,7 +1,16 @@
 import { Resend } from "resend";
 import { TicketEmail } from "./TicketEmail";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY não configurada");
+  }
+  resendClient ??= new Resend(apiKey);
+  return resendClient;
+}
 
 export async function sendTicketEmail(params: {
   buyerEmail: string;
@@ -11,6 +20,8 @@ export async function sendTicketEmail(params: {
   eventStartsAt: Date;
   qrCodeDataUrl: string;
 }) {
+  const resend = getResendClient();
+
   const { error } = await resend.emails.send({
     from: "Plataforma de Ingressos <ingressos@resend.dev>",
     to: params.buyerEmail,

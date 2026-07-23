@@ -8,6 +8,11 @@ vi.mock("resend", () => ({
   })),
 }));
 
+// getResendClient() exige RESEND_API_KEY antes de instanciar (mesmo com o
+// SDK mockado, essa checagem é lógica pura do nosso módulo). Como o SDK
+// está mockado, o valor não precisa ser uma chave real.
+process.env.RESEND_API_KEY = "re_test_fake_key";
+
 const { sendTicketEmail } = await import("./sendTicketEmail");
 
 describe("sendTicketEmail", () => {

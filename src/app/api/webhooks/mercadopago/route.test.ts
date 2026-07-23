@@ -144,4 +144,51 @@ describe("POST /api/webhooks/mercadopago", () => {
     expect(tickets).toHaveLength(0);
     expect(sendTicketEmailMock).not.toHaveBeenCalled();
   });
+
+  it("sends one email per ticket when quantity is greater than 1", async () => {
+    const multiTicketOrder = await testPrisma.order.create({
+      data: {
+        eventId,
+        organizerId,
+        buyerName: "Comprador Multi",
+        buyerEmail: "multi@teste.dev",
+        quantity: 2,
+        totalAmountCents: 10000,
+        status: "PENDING",
+      },
+    });
+
+    fetchPaymentMock.mockResolvedValue({
+      status: "approved",
+      external_reference: multiTicketOrder.id,
+    });
+
+    const request = buildSignedRequest("payment-multi", "req-multi");
+    await POST(request);
+
+    const tickets = await testPrisma.ticket.findMany({
+      where: { orderId: multiTicketOrder.id },
+    });
+    expect(tickets).toHaveLength(2);
+
+    expect(sendTicketEmailMock).toHaveBeenCalledTimes(2);
+
+    const qrCodeUrlsUsed = sendTicketEmailMock.mock.calls.map(
+      (call) => call[0].qrCodeDataUrl,
+    );
+    expect(qrCodeUrlsUsed[0]).not.toBe(qrCodeUrlsUsed[1]);
+  });
+
+  it("returns 200 without sending email when external_reference points to a nonexistent order", async () => {
+    fetchPaymentMock.mockResolvedValue({
+      status: "approved",
+      external_reference: crypto.randomUUID(),
+    });
+
+    const request = buildSignedRequest("payment-ghost", "req-ghost");
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(sendTicketEmailMock).not.toHaveBeenCalled();
+  });
 });
