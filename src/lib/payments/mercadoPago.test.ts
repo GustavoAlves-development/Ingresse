@@ -45,6 +45,20 @@ describe("createCheckoutPreference", () => {
       "https://app.test/api/webhooks/mercadopago",
     );
   });
+
+  it("throws when Mercado Pago does not return an init_point", async () => {
+    preferenceCreateMock.mockResolvedValue({ id: "pref_123", init_point: undefined });
+
+    await expect(
+      createCheckoutPreference({
+        orderId: "order_1",
+        eventName: "Show de Teste",
+        ticketPriceCents: 5000,
+        quantity: 1,
+        notificationUrl: "https://app.test/api/webhooks/mercadopago",
+      }),
+    ).rejects.toThrow();
+  });
 });
 
 describe("fetchPayment", () => {

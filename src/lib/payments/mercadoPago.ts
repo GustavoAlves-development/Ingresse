@@ -28,6 +28,12 @@ export async function createCheckoutPreference(params: {
     },
   });
 
+  if (!result.id || !result.init_point) {
+    throw new Error(
+      "Mercado Pago não retornou id/init_point ao criar a preference",
+    );
+  }
+
   return { id: result.id, initPoint: result.init_point };
 }
 
