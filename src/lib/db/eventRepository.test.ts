@@ -75,4 +75,13 @@ describe("eventRepository", () => {
     expect(eventsForA).toHaveLength(1);
     expect(eventsForA[0].slug).toBe("evento-a1");
   });
+
+  it("returns null for an eventId that does not exist", async () => {
+    const found = await findEventForOrganizer(
+      organizerAId,
+      crypto.randomUUID(),
+    );
+
+    expect(found).toBeNull();
+  });
 });

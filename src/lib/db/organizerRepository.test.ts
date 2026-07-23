@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetDatabase, testPrisma } from "../../../tests/testDb";
+import { resetDatabase } from "../../../tests/testDb";
 import { createOrganizer, findOrganizerById } from "./organizerRepository";
 
 describe("organizerRepository", () => {

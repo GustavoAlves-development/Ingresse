@@ -1,6 +1,6 @@
 import { prisma } from "./prismaClient";
 
-type CreateEventInput = {
+export type CreateEventInput = {
   name: string;
   slug: string;
   location: string;
@@ -27,6 +27,9 @@ export async function listEventsByOrganizer(organizerId: string) {
   });
 }
 
+// Padrão OBRIGATÓRIO para toda busca tenant-scoped em fases futuras (Order,
+// Ticket): sempre exigir organizerId E o id do recurso juntos via findFirst,
+// nunca buscar por id isolado — evita vazamento de dado entre organizadores.
 export async function findEventForOrganizer(
   organizerId: string,
   eventId: string,
