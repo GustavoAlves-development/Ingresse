@@ -62,3 +62,18 @@ export async function updateEvent(
 
   return result.count === 1;
 }
+
+// Lookup por id sem escopo de organizador — uso restrito a processos de
+// sistema (webhook, checkout) que já obtiveram o eventId de um registro
+// nosso confiável (nunca de input de sessão de usuário tentando acessar
+// dado de outro tenant). Não use isso a partir de uma rota que recebe
+// eventId vindo de uma sessão autenticada — use findEventForOrganizer.
+export async function findEventById(eventId: string) {
+  return prisma.event.findUnique({ where: { id: eventId } });
+}
+
+// Lookup público por slug — qualquer visitante pode ver um evento
+// publicado pelo slug (é o propósito da página pública de vendas).
+export async function findEventBySlug(slug: string) {
+  return prisma.event.findUnique({ where: { slug } });
+}

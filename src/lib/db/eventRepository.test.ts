@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { resetDatabase, testPrisma } from "../../../tests/testDb";
 import {
   createEvent,
+  findEventById,
+  findEventBySlug,
   findEventForOrganizer,
   listEventsByOrganizer,
   updateEvent,
@@ -174,6 +176,58 @@ describe("eventRepository", () => {
 
       const fetched = await findEventForOrganizer(organizerAId, event.id);
       expect(fetched?.description).toBeNull();
+    });
+  });
+
+  describe("findEventById and findEventBySlug", () => {
+    beforeEach(async () => {
+      await resetDatabase();
+      const organizer = await testPrisma.organizer.create({
+        data: { name: "Organizador Teste", email: "org@teste.dev" },
+      });
+      organizerAId = organizer.id;
+    });
+
+    it("findEventById returns the event regardless of organizer", async () => {
+      const event = await createEvent(organizerAId, {
+        name: "Evento Público",
+        slug: "evento-publico-1",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-11-01T20:00:00-03:00"),
+        ticketPriceCents: 5000,
+        capacity: 100,
+      });
+
+      const found = await findEventById(event.id);
+
+      expect(found?.id).toBe(event.id);
+    });
+
+    it("findEventById returns null for a nonexistent id", async () => {
+      const found = await findEventById(crypto.randomUUID());
+
+      expect(found).toBeNull();
+    });
+
+    it("findEventBySlug returns the event by its unique slug", async () => {
+      await createEvent(organizerAId, {
+        name: "Evento Público",
+        slug: "evento-publico-2",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-11-01T20:00:00-03:00"),
+        ticketPriceCents: 5000,
+        capacity: 100,
+      });
+
+      const found = await findEventBySlug("evento-publico-2");
+
+      expect(found?.slug).toBe("evento-publico-2");
+    });
+
+    it("findEventBySlug returns null for a nonexistent slug", async () => {
+      const found = await findEventBySlug("nao-existe");
+
+      expect(found).toBeNull();
     });
   });
 });
