@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 const eventFieldsSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
+  name: z.string().trim().min(1, "Nome é obrigatório"),
   description: z.string().optional(),
-  location: z.string().min(1, "Local é obrigatório"),
+  location: z.string().trim().min(1, "Local é obrigatório"),
   startsAt: z.coerce.date(),
   ticketPriceReais: z.coerce
     .number()

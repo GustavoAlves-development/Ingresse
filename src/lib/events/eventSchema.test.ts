@@ -28,6 +28,24 @@ describe("createEventSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects a name that is only whitespace", () => {
+    const result = createEventSchema.safeParse({
+      ...validInput,
+      name: "   ",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a location that is only whitespace", () => {
+    const result = createEventSchema.safeParse({
+      ...validInput,
+      location: "   ",
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it("rejects zero or negative price", () => {
     const result = createEventSchema.safeParse({
       ...validInput,
