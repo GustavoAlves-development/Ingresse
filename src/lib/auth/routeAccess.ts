@@ -4,10 +4,11 @@ export function isAuthorizedForPath(
   role: Role | undefined,
   pathname: string,
 ): boolean {
-  if (pathname.startsWith("/admin")) {
+  const normalizedPath = pathname.toLowerCase();
+  if (normalizedPath.startsWith("/admin")) {
     return role === "ORGANIZER_ADMIN";
   }
-  if (pathname.startsWith("/portaria")) {
+  if (normalizedPath.startsWith("/portaria")) {
     return role === "ORGANIZER_ADMIN" || role === "PORTARIA_STAFF";
   }
   return true;

@@ -30,4 +30,8 @@ describe("isAuthorizedForPath", () => {
     expect(isAuthorizedForPath(undefined, "/")).toBe(true);
     expect(isAuthorizedForPath(undefined, "/login")).toBe(true);
   });
+
+  it("blocks unauthenticated (undefined role) from an uppercase-variant admin path", () => {
+    expect(isAuthorizedForPath(undefined, "/ADMIN")).toBe(false);
+  });
 });
