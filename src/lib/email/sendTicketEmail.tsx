@@ -11,7 +11,7 @@ export async function sendTicketEmail(params: {
   eventStartsAt: Date;
   qrCodeDataUrl: string;
 }) {
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: "Plataforma de Ingressos <ingressos@resend.dev>",
     to: params.buyerEmail,
     subject: `Seu ingresso para ${params.eventName}`,
@@ -25,4 +25,8 @@ export async function sendTicketEmail(params: {
       />
     ),
   });
+
+  if (error) {
+    throw new Error(`Falha ao enviar e-mail do ingresso: ${error.message}`);
+  }
 }
