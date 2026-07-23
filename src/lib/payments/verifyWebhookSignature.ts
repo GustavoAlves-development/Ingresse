@@ -8,6 +8,10 @@ export function verifyMercadoPagoSignature(params: {
 }): boolean {
   const { xSignature, xRequestId, dataId, webhookSecret } = params;
 
+  if (!webhookSecret) {
+    return false;
+  }
+
   const signatureParts = Object.fromEntries(
     xSignature.split(",").map((part) => {
       const [key, value] = part.split("=");

@@ -17,7 +17,11 @@ process.env.MERCADO_PAGO_WEBHOOK_SECRET = webhookSecret;
 
 const { POST } = await import("./route");
 
-function buildSignedRequest(dataId: string, requestId: string) {
+function buildSignedRequest(
+  dataId: string,
+  requestId: string,
+  extraBody: Record<string, unknown> = {},
+) {
   const ts = "1700000000";
   const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
   const hash = createHmac("sha256", webhookSecret).update(manifest).digest("hex");
@@ -29,7 +33,7 @@ function buildSignedRequest(dataId: string, requestId: string) {
       "x-signature": `ts=${ts},v1=${hash}`,
       "x-request-id": requestId,
     },
-    body: JSON.stringify({ data: { id: dataId } }),
+    body: JSON.stringify({ data: { id: dataId }, ...extraBody }),
   });
 }
 
@@ -95,6 +99,7 @@ describe("POST /api/webhooks/mercadopago", () => {
     fetchPaymentMock.mockResolvedValue({
       status: "approved",
       external_reference: orderId,
+      transaction_amount: 50,
     });
 
     const request = buildSignedRequest("payment-1", "req-1");
@@ -120,6 +125,7 @@ describe("POST /api/webhooks/mercadopago", () => {
     fetchPaymentMock.mockResolvedValue({
       status: "approved",
       external_reference: orderId,
+      transaction_amount: 50,
     });
 
     await POST(buildSignedRequest("payment-1", "req-1"));
@@ -161,6 +167,7 @@ describe("POST /api/webhooks/mercadopago", () => {
     fetchPaymentMock.mockResolvedValue({
       status: "approved",
       external_reference: multiTicketOrder.id,
+      transaction_amount: 100,
     });
 
     const request = buildSignedRequest("payment-multi", "req-multi");
@@ -189,6 +196,38 @@ describe("POST /api/webhooks/mercadopago", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
+    expect(sendTicketEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("ignores notifications that are not of type 'payment'", async () => {
+    const request = buildSignedRequest("merchant-order-1", "req-mo", {
+      type: "merchant_order",
+    });
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(fetchPaymentMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects and does not mark the order paid when the paid amount does not match the order total", async () => {
+    fetchPaymentMock.mockResolvedValue({
+      status: "approved",
+      external_reference: orderId,
+      transaction_amount: 1,
+    });
+
+    const request = buildSignedRequest("payment-mismatch", "req-mismatch");
+    const response = await POST(request);
+
+    expect(response.status).toBe(400);
+
+    const updatedOrder = await testPrisma.order.findUnique({
+      where: { id: orderId },
+    });
+    expect(updatedOrder?.status).toBe("PENDING");
+
+    const tickets = await testPrisma.ticket.findMany({ where: { orderId } });
+    expect(tickets).toHaveLength(0);
     expect(sendTicketEmailMock).not.toHaveBeenCalled();
   });
 });

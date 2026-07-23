@@ -101,6 +101,36 @@ describe("orderRepository", () => {
       });
       expect(ticketCount).toBe(1);
     });
+
+    it("is safe under real concurrency: two simultaneous calls only process the payment once", async () => {
+      const order = await createOrder({
+        eventId,
+        organizerId,
+        buyerName: "Comprador Concorrente",
+        buyerEmail: "concorrente@teste.dev",
+        quantity: 1,
+        totalAmountCents: 5000,
+      });
+
+      const [first, second] = await Promise.all([
+        markOrderAsPaidAndCreateTickets({
+          orderId: order.id,
+          mercadoPagoPaymentId: "mp-payment-concurrent",
+        }),
+        markOrderAsPaidAndCreateTickets({
+          orderId: order.id,
+          mercadoPagoPaymentId: "mp-payment-concurrent",
+        }),
+      ]);
+
+      const processedResults = [first, second].filter((r) => !r.alreadyProcessed);
+      expect(processedResults).toHaveLength(1);
+
+      const ticketCount = await testPrisma.ticket.count({
+        where: { orderId: order.id },
+      });
+      expect(ticketCount).toBe(1);
+    });
   });
 
   describe("findOrderById", () => {

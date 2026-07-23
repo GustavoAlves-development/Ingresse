@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { findEventById } from "@/lib/db/eventRepository";
-import { markOrderAsPaidAndCreateTickets } from "@/lib/db/orderRepository";
+import { findOrderById, markOrderAsPaidAndCreateTickets } from "@/lib/db/orderRepository";
 import { sendTicketEmail } from "@/lib/email/sendTicketEmail";
 import { fetchPayment } from "@/lib/payments/mercadoPago";
 import { verifyMercadoPagoSignature } from "@/lib/payments/verifyWebhookSignature";
@@ -27,6 +27,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
+  // O Mercado Pago também envia outros tópicos (ex: merchant_order) usando
+  // o mesmo formato de data.id — esses não correspondem a um pagamento e
+  // fetchPayment falharia. Só processamos notificações de pagamento.
+  if (body?.type && body.type !== "payment") {
+    return NextResponse.json({ received: true });
+  }
+
   const payment = await fetchPayment(String(dataId));
 
   if (payment.status !== "approved") {
@@ -39,6 +46,18 @@ export async function POST(request: Request) {
       { error: "missing external_reference" },
       { status: 400 },
     );
+  }
+
+  const order = await findOrderById(orderId);
+  if (!order) {
+    return NextResponse.json({ received: true });
+  }
+
+  // Defesa em profundidade: confirma que o valor realmente pago bate com o
+  // valor esperado do pedido antes de criar qualquer ticket.
+  const paidAmountCents = Math.round((payment.transaction_amount ?? 0) * 100);
+  if (paidAmountCents !== order.totalAmountCents) {
+    return NextResponse.json({ error: "amount mismatch" }, { status: 400 });
   }
 
   const result = await markOrderAsPaidAndCreateTickets({

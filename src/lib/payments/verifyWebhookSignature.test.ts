@@ -70,4 +70,17 @@ describe("verifyMercadoPagoSignature", () => {
 
     expect(result).toBe(false);
   });
+
+  it("rejects when the webhook secret is empty", () => {
+    const xSignature = buildSignature("123", "req-1", "1700000000", "");
+
+    const result = verifyMercadoPagoSignature({
+      xSignature,
+      xRequestId: "req-1",
+      dataId: "123",
+      webhookSecret: "",
+    });
+
+    expect(result).toBe(false);
+  });
 });
