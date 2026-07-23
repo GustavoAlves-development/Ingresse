@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organizer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  document  String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+
+  users  User[]
+  events Event[]
+}
+
+enum Role {
+  ORGANIZER_ADMIN
+  PORTARIA_STAFF
+}
+
+model User {
+  id           String   @id @default(uuid())
+  organizerId  String
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(PORTARIA_STAFF)
+  createdAt    DateTime @default(now())
+
+  organizer       Organizer        @relation(fields: [organizerId], references: [id])
+  checkInAttempts CheckInAttempt[]
+
+  @@index([organizerId])
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+model Event {
+  id               String      @id @default(uuid())
+  organizerId      String
+  name             String
+  slug             String      @unique
+  description      String?
+  location         String
+  startsAt         DateTime
+  ticketPriceCents Int
+  capacity         Int
+  status           EventStatus @default(DRAFT)
+  coverImageUrl    String?
+  createdAt        DateTime    @default(now())
+
+  organizer Organizer @relation(fields: [organizerId], references: [id])
+  orders    Order[]
+  tickets   Ticket[]
+
+  @@index([organizerId])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Order {
+  id                      String      @id @default(uuid())
+  organizerId             String
+  eventId                 String
+  buyerName               String
+  buyerEmail              String
+  quantity                Int
+  totalAmountCents        Int
+  status                  OrderStatus @default(PENDING)
+  mercadoPagoPaymentId    String?     @unique
+  mercadoPagoPreferenceId String?
+  paidAt                  DateTime?
+  createdAt               DateTime    @default(now())
+
+  event   Event    @relation(fields: [eventId], references: [id])
+  tickets Ticket[]
+
+  @@index([eventId])
+  @@index([organizerId])
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  CANCELLED
+}
+
+model Ticket {
+  id           String       @id @default(uuid())
+  organizerId  String
+  eventId      String
+  orderId      String
+  qrToken      String       @unique
+  status       TicketStatus @default(VALID)
+  buyerName    String
+  usedAt       DateTime?
+  usedByUserId String?
+  createdAt    DateTime     @default(now())
+
+  event           Event            @relation(fields: [eventId], references: [id])
+  order           Order            @relation(fields: [orderId], references: [id])
+  checkInAttempts CheckInAttempt[]
+
+  @@index([eventId])
+  @@index([qrToken])
+  @@index([organizerId])
+}
+
+enum CheckInResult {
+  SUCCESS
+  ALREADY_USED
+  INVALID
+}
+
+model CheckInAttempt {
+  id              String        @id @default(uuid())
+  ticketId        String
+  scannedByUserId String
+  result          CheckInResult
+  scannedAt       DateTime      @default(now())
+
+  ticket    Ticket @relation(fields: [ticketId], references: [id])
+  scannedBy User   @relation(fields: [scannedByUserId], references: [id])
+
+  @@index([ticketId])
+}
