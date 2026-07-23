@@ -4,6 +4,7 @@ import {
   createEvent,
   findEventForOrganizer,
   listEventsByOrganizer,
+  updateEvent,
 } from "./eventRepository";
 
 describe("eventRepository", () => {
@@ -83,5 +84,71 @@ describe("eventRepository", () => {
     );
 
     expect(found).toBeNull();
+  });
+
+  describe("updateEvent", () => {
+    beforeEach(async () => {
+      await resetDatabase();
+      const organizerA = await testPrisma.organizer.create({
+        data: { name: "Organizador A", email: "a@organizador.dev" },
+      });
+      const organizerB = await testPrisma.organizer.create({
+        data: { name: "Organizador B", email: "b@organizador.dev" },
+      });
+      organizerAId = organizerA.id;
+      organizerBId = organizerB.id;
+    });
+
+    it("updates an event belonging to the organizer", async () => {
+      const event = await createEvent(organizerAId, {
+        name: "Nome Original",
+        slug: "nome-original",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-10-01T20:00:00-03:00"),
+        ticketPriceCents: 3000,
+        capacity: 50,
+      });
+
+      const updated = await updateEvent(organizerAId, event.id, {
+        name: "Nome Atualizado",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-10-01T20:00:00-03:00"),
+        ticketPriceCents: 4000,
+        capacity: 80,
+        status: "PUBLISHED",
+      });
+
+      expect(updated).toBe(true);
+
+      const fetched = await findEventForOrganizer(organizerAId, event.id);
+      expect(fetched?.name).toBe("Nome Atualizado");
+      expect(fetched?.ticketPriceCents).toBe(4000);
+      expect(fetched?.status).toBe("PUBLISHED");
+    });
+
+    it("does not update another organizer's event", async () => {
+      const event = await createEvent(organizerAId, {
+        name: "Nome Original",
+        slug: "nome-original-2",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-10-01T20:00:00-03:00"),
+        ticketPriceCents: 3000,
+        capacity: 50,
+      });
+
+      const updated = await updateEvent(organizerBId, event.id, {
+        name: "Nome Hackeado",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-10-01T20:00:00-03:00"),
+        ticketPriceCents: 4000,
+        capacity: 80,
+        status: "PUBLISHED",
+      });
+
+      expect(updated).toBe(false);
+
+      const fetched = await findEventForOrganizer(organizerAId, event.id);
+      expect(fetched?.name).toBe("Nome Original");
+    });
   });
 });

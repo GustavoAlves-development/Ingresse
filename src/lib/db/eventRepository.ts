@@ -1,3 +1,4 @@
+import type { EventStatus } from "@prisma/client";
 import { prisma } from "./prismaClient";
 
 export type CreateEventInput = {
@@ -37,4 +38,27 @@ export async function findEventForOrganizer(
   return prisma.event.findFirst({
     where: { id: eventId, organizerId },
   });
+}
+
+export type UpdateEventInput = {
+  name: string;
+  description?: string;
+  location: string;
+  startsAt: Date;
+  ticketPriceCents: number;
+  capacity: number;
+  status: EventStatus;
+};
+
+export async function updateEvent(
+  organizerId: string,
+  eventId: string,
+  input: UpdateEventInput,
+) {
+  const result = await prisma.event.updateMany({
+    where: { id: eventId, organizerId },
+    data: input,
+  });
+
+  return result.count === 1;
 }
