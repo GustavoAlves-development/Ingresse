@@ -28,6 +28,9 @@ if (devDatabaseUrl && devDatabaseUrl === testDatabaseUrl) {
 }
 
 export default defineConfig({
+  esbuild: {
+    jsx: "automatic",
+  },
   test: {
     environment: "node",
     env: {
