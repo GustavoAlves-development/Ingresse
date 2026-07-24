@@ -1,5 +1,17 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { JetBrains_Mono, Space_Grotesk, Work_Sans } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const workSans = Work_Sans({ subsets: ["latin"], variable: "--font-sans" });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-heading",
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "Plataforma de Ingressos",
@@ -12,8 +24,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <body className="bg-[#0a0a0f] text-white antialiased">{children}</body>
+    <html
+      lang="pt-BR"
+      className={cn(
+        "font-sans",
+        workSans.variable,
+        spaceGrotesk.variable,
+        jetbrainsMono.variable,
+      )}
+    >
+      <body className="bg-background text-foreground antialiased">
+        {children}
+      </body>
     </html>
   );
 }
