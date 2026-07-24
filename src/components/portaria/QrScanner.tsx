@@ -94,6 +94,10 @@ export function QrScanner() {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
         }
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         animationFrameId = requestAnimationFrame(tick);
       } catch {
         setCameraError("Não foi possível acessar a câmera.");
