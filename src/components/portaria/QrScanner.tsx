@@ -4,7 +4,7 @@ import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type ScanResult = {
-  result: "SUCCESS" | "ALREADY_USED" | "INVALID";
+  result: "SUCCESS" | "ALREADY_USED" | "INVALID" | "ERROR";
   buyerName: string | null;
 };
 
@@ -15,12 +15,15 @@ const RESULT_STYLES: Record<ScanResult["result"], string> = {
     "border-red-500 bg-red-950 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse",
   INVALID:
     "border-red-500 bg-red-950 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse",
+  ERROR:
+    "border-red-500 bg-red-950 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse",
 };
 
 const RESULT_LABELS: Record<ScanResult["result"], string> = {
   SUCCESS: "Ingresso válido",
   ALREADY_USED: "Ingresso já utilizado",
   INVALID: "Ingresso inválido",
+  ERROR: "Erro ao validar. Tente novamente.",
 };
 
 export function QrScanner() {
@@ -39,13 +42,26 @@ export function QrScanner() {
   const validateToken = useCallback(async (qrToken: string) => {
     validatingRef.current = true;
     try {
-      const response = await fetch("/api/tickets/validate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ qrToken }),
-      });
-      const body = await response.json();
-      setScanResult({ result: body.result, buyerName: body.buyerName ?? null });
+      try {
+        const response = await fetch("/api/tickets/validate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ qrToken }),
+        });
+        if (!response.ok) {
+          setScanResult({ result: "ERROR", buyerName: null });
+          return;
+        }
+        const body = await response.json();
+        const validResults = ["SUCCESS", "ALREADY_USED", "INVALID"] as const;
+        if (validResults.includes(body.result)) {
+          setScanResult({ result: body.result, buyerName: body.buyerName ?? null });
+        } else {
+          setScanResult({ result: "ERROR", buyerName: null });
+        }
+      } catch {
+        setScanResult({ result: "ERROR", buyerName: null });
+      }
     } finally {
       validatingRef.current = false;
     }
