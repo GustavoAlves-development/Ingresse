@@ -5,6 +5,7 @@ import { listEventsByOrganizer } from "@/lib/db/eventRepository";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CopyLinkButton } from "@/components/admin/CopyLinkButton";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Rascunho",
@@ -25,6 +26,7 @@ export default async function EventsListPage() {
   }
 
   const events = await listEventsByOrganizer(session.user.organizerId);
+  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
 
   return (
     <main className="mx-auto max-w-3xl p-8">
@@ -38,29 +40,46 @@ export default async function EventsListPage() {
         <p className="text-muted-foreground">Nenhum evento criado ainda.</p>
       ) : (
         <div className="flex flex-col gap-3">
-          {events.map((event) => (
-            <Card key={event.id}>
-              <CardContent className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{event.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {event.location}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Badge variant="outline" className={STATUS_CLASSES[event.status]}>
-                    {STATUS_LABELS[event.status] ?? event.status}
-                  </Badge>
-                  <Link
-                    href={`/admin/events/${event.id}/edit`}
-                    className="text-sm text-primary underline underline-offset-4"
-                  >
-                    Editar
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {events.map((event) => {
+            const publicUrl = `${appUrl}/e/${event.slug}`;
+
+            return (
+              <Card key={event.id}>
+                <CardContent className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{event.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {event.location}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Badge
+                        variant="outline"
+                        className={STATUS_CLASSES[event.status]}
+                      >
+                        {STATUS_LABELS[event.status] ?? event.status}
+                      </Badge>
+                      <Link
+                        href={`/admin/events/${event.id}/edit`}
+                        className="text-sm text-primary underline underline-offset-4"
+                      >
+                        Editar
+                      </Link>
+                    </div>
+                  </div>
+                  {event.status === "PUBLISHED" && (
+                    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                      <span className="truncate font-mono text-xs text-muted-foreground">
+                        {publicUrl}
+                      </span>
+                      <CopyLinkButton url={publicUrl} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </main>
