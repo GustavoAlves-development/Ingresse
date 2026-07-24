@@ -2,21 +2,24 @@
 
 import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { TicketPerforation } from "@/components/tickets/TicketPerforation";
 
 type ScanResult = {
   result: "SUCCESS" | "ALREADY_USED" | "INVALID" | "ERROR";
   buyerName: string | null;
 };
 
+const SUCCESS_GLOW =
+  "shadow-[0_0_30px_color-mix(in_oklch,var(--success)_55%,transparent)]";
+const DANGER_GLOW =
+  "shadow-[0_0_30px_color-mix(in_oklch,var(--destructive)_55%,transparent)] motion-safe:animate-pulse";
+
 const RESULT_STYLES: Record<ScanResult["result"], string> = {
-  SUCCESS:
-    "border-green-500 bg-green-950 text-green-400 shadow-[0_0_30px_rgba(34,197,94,0.5)]",
-  ALREADY_USED:
-    "border-red-500 bg-red-950 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse",
-  INVALID:
-    "border-red-500 bg-red-950 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse",
-  ERROR:
-    "border-red-500 bg-red-950 text-red-400 shadow-[0_0_30px_rgba(239,68,68,0.5)] animate-pulse",
+  SUCCESS: `border-success/40 bg-success/10 text-success ${SUCCESS_GLOW}`,
+  ALREADY_USED: `border-destructive/40 bg-destructive/10 text-destructive ${DANGER_GLOW}`,
+  INVALID: `border-destructive/40 bg-destructive/10 text-destructive ${DANGER_GLOW}`,
+  ERROR: `border-destructive/40 bg-destructive/10 text-destructive ${DANGER_GLOW}`,
 };
 
 const RESULT_LABELS: Record<ScanResult["result"], string> = {
@@ -131,24 +134,36 @@ export function QrScanner() {
 
   return (
     <div className="flex flex-col gap-4">
-      {cameraError && <p className="text-sm text-red-500">{cameraError}</p>}
-      <video ref={videoRef} muted playsInline className="w-full rounded" />
+      {cameraError && (
+        <p className="text-sm text-destructive">{cameraError}</p>
+      )}
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        className="w-full rounded-xl"
+      />
       <canvas ref={canvasRef} className="hidden" />
       {scanResult && (
         <div
-          className={`rounded border-2 p-4 text-center text-lg font-semibold ${RESULT_STYLES[scanResult.result]}`}
+          className={`[--card-spacing:--spacing(4)] rounded-xl border-2 p-(--card-spacing) text-center text-lg font-semibold ${RESULT_STYLES[scanResult.result]}`}
         >
-          <p>{RESULT_LABELS[scanResult.result]}</p>
+          <p className="font-heading">{RESULT_LABELS[scanResult.result]}</p>
           {scanResult.buyerName && (
-            <p className="text-base font-normal">{scanResult.buyerName}</p>
+            <>
+              <TicketPerforation />
+              <p className="text-base font-normal text-foreground">
+                {scanResult.buyerName}
+              </p>
+            </>
           )}
-          <button
+          <Button
             type="button"
             onClick={() => setScanResult(null)}
-            className="mt-4 rounded bg-blue-600 px-3 py-2 text-sm font-normal text-white"
+            className="mt-4"
           >
             Escanear próximo
-          </button>
+          </Button>
         </div>
       )}
     </div>
