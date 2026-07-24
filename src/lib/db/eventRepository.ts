@@ -10,6 +10,7 @@ export type CreateEventInput = {
   capacity: number;
   description?: string;
   coverImageUrl?: string;
+  confirmedAttendees?: number;
 };
 
 export async function createEvent(
@@ -28,15 +29,16 @@ export async function listEventsByOrganizer(organizerId: string) {
   });
 }
 
-// Padrão OBRIGATÓRIO para toda busca tenant-scoped em fases futuras (Order,
-// Ticket): sempre exigir organizerId E o id do recurso juntos via findFirst,
-// nunca buscar por id isolado — evita vazamento de dado entre organizadores.
+// Padrão OBRIGATÓRIO para toda busca tenant-scoped: sempre exigir
+// organizerId E o id do recurso juntos via findFirst, nunca buscar por id
+// isolado — evita vazamento de dado entre organizadores.
 export async function findEventForOrganizer(
   organizerId: string,
   eventId: string,
 ) {
   return prisma.event.findFirst({
     where: { id: eventId, organizerId },
+    include: { attractions: { orderBy: { createdAt: "asc" } } },
   });
 }
 
@@ -48,6 +50,8 @@ export type UpdateEventInput = {
   ticketPriceCents: number;
   capacity: number;
   status: EventStatus;
+  coverImageUrl?: string | null;
+  confirmedAttendees?: number | null;
 };
 
 export async function updateEvent(
@@ -75,5 +79,8 @@ export async function findEventById(eventId: string) {
 // Lookup público por slug — qualquer visitante pode ver um evento
 // publicado pelo slug (é o propósito da página pública de vendas).
 export async function findEventBySlug(slug: string) {
-  return prisma.event.findUnique({ where: { slug } });
+  return prisma.event.findUnique({
+    where: { slug },
+    include: { attractions: { orderBy: { createdAt: "asc" } } },
+  });
 }

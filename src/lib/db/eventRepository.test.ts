@@ -88,6 +88,29 @@ describe("eventRepository", () => {
     expect(found).toBeNull();
   });
 
+  it("includes attractions ordered by creation time", async () => {
+    const event = await createEvent(organizerAId, {
+      name: "Show com Atrações",
+      slug: "show-com-atracoes",
+      location: "São Paulo, SP",
+      startsAt: new Date("2026-11-01T21:00:00-03:00"),
+      ticketPriceCents: 5000,
+      capacity: 100,
+    });
+    await testPrisma.attraction.create({
+      data: { eventId: event.id, organizerId: organizerAId, name: "DJ Primeiro" },
+    });
+    await testPrisma.attraction.create({
+      data: { eventId: event.id, organizerId: organizerAId, name: "DJ Segundo" },
+    });
+
+    const found = await findEventForOrganizer(organizerAId, event.id);
+
+    expect(found?.attractions).toHaveLength(2);
+    expect(found?.attractions[0].name).toBe("DJ Primeiro");
+    expect(found?.attractions[1].name).toBe("DJ Segundo");
+  });
+
   describe("updateEvent", () => {
     beforeEach(async () => {
       await resetDatabase();
@@ -177,6 +200,60 @@ describe("eventRepository", () => {
       const fetched = await findEventForOrganizer(organizerAId, event.id);
       expect(fetched?.description).toBeNull();
     });
+
+    it("persists coverImageUrl and confirmedAttendees", async () => {
+      const event = await createEvent(organizerAId, {
+        name: "Evento Teste",
+        slug: "evento-cover-confirmados",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-10-01T20:00:00-03:00"),
+        ticketPriceCents: 3000,
+        capacity: 50,
+      });
+
+      await updateEvent(organizerAId, event.id, {
+        name: event.name,
+        location: event.location,
+        startsAt: event.startsAt,
+        ticketPriceCents: event.ticketPriceCents,
+        capacity: event.capacity,
+        status: "PUBLISHED",
+        coverImageUrl: "https://example.com/capa.jpg",
+        confirmedAttendees: 42,
+      });
+
+      const fetched = await findEventForOrganizer(organizerAId, event.id);
+      expect(fetched?.coverImageUrl).toBe("https://example.com/capa.jpg");
+      expect(fetched?.confirmedAttendees).toBe(42);
+    });
+
+    it("clears coverImageUrl and confirmedAttendees when null is passed", async () => {
+      const event = await createEvent(organizerAId, {
+        name: "Evento Teste",
+        slug: "evento-limpa-cover-confirmados",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-10-01T20:00:00-03:00"),
+        ticketPriceCents: 3000,
+        capacity: 50,
+        coverImageUrl: "https://example.com/capa.jpg",
+        confirmedAttendees: 10,
+      });
+
+      await updateEvent(organizerAId, event.id, {
+        name: event.name,
+        location: event.location,
+        startsAt: event.startsAt,
+        ticketPriceCents: event.ticketPriceCents,
+        capacity: event.capacity,
+        status: "PUBLISHED",
+        coverImageUrl: null,
+        confirmedAttendees: null,
+      });
+
+      const fetched = await findEventForOrganizer(organizerAId, event.id);
+      expect(fetched?.coverImageUrl).toBeNull();
+      expect(fetched?.confirmedAttendees).toBeNull();
+    });
   });
 
   describe("findEventById and findEventBySlug", () => {
@@ -222,6 +299,25 @@ describe("eventRepository", () => {
       const found = await findEventBySlug("evento-publico-2");
 
       expect(found?.slug).toBe("evento-publico-2");
+    });
+
+    it("findEventBySlug includes attractions ordered by creation time", async () => {
+      const event = await createEvent(organizerAId, {
+        name: "Evento com Atrações",
+        slug: "evento-com-atracoes-slug",
+        location: "São Paulo, SP",
+        startsAt: new Date("2026-11-01T20:00:00-03:00"),
+        ticketPriceCents: 5000,
+        capacity: 100,
+      });
+      await testPrisma.attraction.create({
+        data: { eventId: event.id, organizerId: organizerAId, name: "DJ Teste" },
+      });
+
+      const found = await findEventBySlug("evento-com-atracoes-slug");
+
+      expect(found?.attractions).toHaveLength(1);
+      expect(found?.attractions[0].name).toBe("DJ Teste");
     });
 
     it("findEventBySlug returns null for a nonexistent slug", async () => {
