@@ -1,6 +1,7 @@
 "use client";
 
 import jsQR from "jsqr";
+import { CircleAlert, CircleCheckBig } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TicketPerforation } from "@/components/tickets/TicketPerforation";
@@ -13,7 +14,7 @@ type ScanResult = {
 const SUCCESS_GLOW =
   "shadow-[0_0_30px_color-mix(in_oklch,var(--success)_55%,transparent)]";
 const DANGER_GLOW =
-  "shadow-[0_0_30px_color-mix(in_oklch,var(--destructive)_55%,transparent)] motion-safe:animate-pulse";
+  "shadow-[0_0_30px_color-mix(in_oklch,var(--destructive)_55%,transparent)]";
 
 const RESULT_STYLES: Record<ScanResult["result"], string> = {
   SUCCESS: `border-success/40 bg-success/10 text-success ${SUCCESS_GLOW}`,
@@ -27,6 +28,23 @@ const RESULT_LABELS: Record<ScanResult["result"], string> = {
   ALREADY_USED: "Ingresso já utilizado",
   INVALID: "Ingresso inválido",
   ERROR: "Erro ao validar. Tente novamente.",
+};
+
+// Ícone pulsante nos estados de alerta (spec, seção 7) — reforça a leitura
+// à distância na portaria. Sucesso não pulsa, só o alerta precisa chamar
+// atenção ativamente.
+const RESULT_ICONS: Record<ScanResult["result"], typeof CircleCheckBig> = {
+  SUCCESS: CircleCheckBig,
+  ALREADY_USED: CircleAlert,
+  INVALID: CircleAlert,
+  ERROR: CircleAlert,
+};
+
+const RESULT_ICON_CLASSES: Record<ScanResult["result"], string> = {
+  SUCCESS: "",
+  ALREADY_USED: "motion-safe:animate-pulse",
+  INVALID: "motion-safe:animate-pulse",
+  ERROR: "motion-safe:animate-pulse",
 };
 
 export function QrScanner() {
@@ -148,6 +166,15 @@ export function QrScanner() {
         <div
           className={`[--card-spacing:--spacing(4)] rounded-xl border-2 p-(--card-spacing) text-center text-lg font-semibold ${RESULT_STYLES[scanResult.result]}`}
         >
+          {(() => {
+            const ResultIcon = RESULT_ICONS[scanResult.result];
+            return (
+              <ResultIcon
+                aria-hidden="true"
+                className={`mx-auto mb-2 size-10 ${RESULT_ICON_CLASSES[scanResult.result]}`}
+              />
+            );
+          })()}
           <p className="font-heading">{RESULT_LABELS[scanResult.result]}</p>
           {scanResult.buyerName && (
             <>
