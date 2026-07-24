@@ -5,6 +5,17 @@ import { z } from "zod";
 import { signIn } from "@/auth";
 import { hashPassword } from "@/lib/auth/password";
 import { createOrganizerWithAdminUser } from "@/lib/db/organizerRepository";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 const signupSchema = z.object({
   organizerName: z.string().min(1),
@@ -66,53 +77,60 @@ export default async function SignupPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <form action={signupAction} className="flex w-80 flex-col gap-4">
-        <h1 className="text-xl font-semibold">Criar conta de organizador</h1>
-        {error === "invalid-input" && (
-          <p className="text-sm text-red-500">
-            Preencha todos os campos corretamente.
-          </p>
-        )}
-        {error && error !== "invalid-input" && (
-          <p className="text-sm text-red-500">
-            Não foi possível criar a conta. Tente outro e-mail.
-          </p>
-        )}
-        <input
-          name="organizerName"
-          placeholder="Nome da organização"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="adminName"
-          placeholder="Seu nome"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="email"
-          type="email"
-          placeholder="E-mail"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Senha"
-          required
-          minLength={8}
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-3 py-2 text-white"
-        >
-          Criar conta
-        </button>
-      </form>
+    <main className="flex min-h-screen items-center justify-center px-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-xl">Criar conta de organizador</CardTitle>
+          <CardDescription>
+            Comece a vender ingressos para o seu evento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error === "invalid-input" && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                Preencha todos os campos corretamente.
+              </AlertDescription>
+            </Alert>
+          )}
+          {error && error !== "invalid-input" && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                Não foi possível criar a conta. Tente outro e-mail.
+              </AlertDescription>
+            </Alert>
+          )}
+          <form action={signupAction}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="organizerName">
+                  Nome da organização
+                </FieldLabel>
+                <Input id="organizerName" name="organizerName" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="adminName">Seu nome</FieldLabel>
+                <Input id="adminName" name="adminName" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="email">E-mail</FieldLabel>
+                <Input id="email" name="email" type="email" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="password">Senha</FieldLabel>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  minLength={8}
+                />
+              </Field>
+              <Button type="submit">Criar conta</Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }

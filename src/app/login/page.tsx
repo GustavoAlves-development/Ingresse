@@ -2,6 +2,17 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { signIn } from "@/auth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -42,33 +53,40 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <form action={loginAction} className="flex w-80 flex-col gap-4">
-        <h1 className="text-xl font-semibold">Entrar</h1>
-        {error && (
-          <p className="text-sm text-red-500">E-mail ou senha inválidos.</p>
-        )}
-        <input
-          name="email"
-          type="email"
-          placeholder="E-mail"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Senha"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-3 py-2 text-white"
-        >
-          Entrar
-        </button>
-      </form>
+    <main className="flex min-h-screen items-center justify-center px-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-xl">Entrar</CardTitle>
+          <CardDescription>Acesse o painel do seu evento.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                E-mail ou senha inválidos.
+              </AlertDescription>
+            </Alert>
+          )}
+          <form action={loginAction}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="email">E-mail</FieldLabel>
+                <Input id="email" name="email" type="email" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="password">Senha</FieldLabel>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                />
+              </Field>
+              <Button type="submit">Entrar</Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }
