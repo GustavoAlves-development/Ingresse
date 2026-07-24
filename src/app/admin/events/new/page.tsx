@@ -14,6 +14,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 async function createEventAction(formData: FormData) {
   "use server";
@@ -30,6 +31,8 @@ async function createEventAction(formData: FormData) {
     startsAt: formData.get("startsAt"),
     ticketPriceReais: formData.get("ticketPriceReais"),
     capacity: formData.get("capacity"),
+    coverImageUrl: formData.get("coverImageUrl"),
+    confirmedAttendees: formData.get("confirmedAttendees"),
   });
 
   if (!parsed.success) {
@@ -43,6 +46,8 @@ async function createEventAction(formData: FormData) {
     startsAt,
     ticketPriceReais,
     capacity,
+    coverImageUrl,
+    confirmedAttendees,
   } = parsed.data;
 
   await createEvent(session.user.organizerId, {
@@ -53,6 +58,8 @@ async function createEventAction(formData: FormData) {
     startsAt,
     ticketPriceCents: Math.round(ticketPriceReais * 100),
     capacity,
+    coverImageUrl,
+    confirmedAttendees,
   });
 
   redirect("/admin/events");
@@ -92,6 +99,12 @@ export default async function NewEventPage({
                 <Textarea id="description" name="description" />
               </Field>
               <Field>
+                <FieldLabel htmlFor="coverImageUrl">
+                  Capa do evento (opcional)
+                </FieldLabel>
+                <ImageUpload name="coverImageUrl" />
+              </Field>
+              <Field>
                 <FieldLabel htmlFor="location">Local</FieldLabel>
                 <Input id="location" name="location" required />
               </Field>
@@ -127,6 +140,19 @@ export default async function NewEventPage({
                   step="1"
                   min="1"
                   required
+                  className="font-mono"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="confirmedAttendees">
+                  Pessoas confirmadas (opcional)
+                </FieldLabel>
+                <Input
+                  id="confirmedAttendees"
+                  name="confirmedAttendees"
+                  type="number"
+                  step="1"
+                  min="0"
                   className="font-mono"
                 />
               </Field>
