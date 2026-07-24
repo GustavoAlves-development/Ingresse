@@ -1,7 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
+import {
+  createAttraction,
+  deleteAttractionForOrganizer,
+} from "@/lib/db/attractionRepository";
 import { findEventForOrganizer, updateEvent } from "@/lib/db/eventRepository";
 import { toSaoPauloDatetimeLocalValue } from "@/lib/events/eventDateTime";
+import { addAttractionSchema } from "@/lib/events/attractionSchema";
 import { updateEventSchema } from "@/lib/events/eventSchema";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,6 +19,7 @@ import {
 import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 async function updateEventAction(eventId: string, formData: FormData) {
   "use server";
@@ -31,6 +37,8 @@ async function updateEventAction(eventId: string, formData: FormData) {
     ticketPriceReais: formData.get("ticketPriceReais"),
     capacity: formData.get("capacity"),
     status: formData.get("status"),
+    coverImageUrl: formData.get("coverImageUrl"),
+    confirmedAttendees: formData.get("confirmedAttendees"),
   });
 
   if (!parsed.success) {
@@ -45,6 +53,8 @@ async function updateEventAction(eventId: string, formData: FormData) {
     ticketPriceReais,
     capacity,
     status,
+    coverImageUrl,
+    confirmedAttendees,
   } = parsed.data;
 
   const updated = await updateEvent(session.user.organizerId, eventId, {
@@ -55,6 +65,8 @@ async function updateEventAction(eventId: string, formData: FormData) {
     ticketPriceCents: Math.round(ticketPriceReais * 100),
     capacity,
     status,
+    coverImageUrl: coverImageUrl ?? null,
+    confirmedAttendees: confirmedAttendees ?? null,
   });
 
   if (!updated) {
@@ -62,6 +74,49 @@ async function updateEventAction(eventId: string, formData: FormData) {
   }
 
   redirect("/admin/events");
+}
+
+async function addAttractionAction(eventId: string, formData: FormData) {
+  "use server";
+
+  const session = await auth();
+  if (!session?.user?.organizerId) {
+    redirect("/login");
+  }
+
+  const parsed = addAttractionSchema.safeParse({
+    name: formData.get("name"),
+    photoUrl: formData.get("photoUrl"),
+  });
+
+  if (!parsed.success) {
+    redirect(`/admin/events/${eventId}/edit?error=attraction`);
+  }
+
+  const event = await findEventForOrganizer(session.user.organizerId, eventId);
+  if (!event) {
+    notFound();
+  }
+
+  await createAttraction(eventId, session.user.organizerId, parsed.data);
+
+  redirect(`/admin/events/${eventId}/edit`);
+}
+
+async function removeAttractionAction(
+  eventId: string,
+  attractionId: string,
+) {
+  "use server";
+
+  const session = await auth();
+  if (!session?.user?.organizerId) {
+    redirect("/login");
+  }
+
+  await deleteAttractionForOrganizer(session.user.organizerId, attractionId);
+
+  redirect(`/admin/events/${eventId}/edit`);
 }
 
 const STATUS_OPTIONS = [
@@ -93,23 +148,24 @@ export default async function EditEventPage({
     notFound();
   }
 
-  const boundAction = updateEventAction.bind(null, eventId);
+  const boundUpdateAction = updateEventAction.bind(null, eventId);
+  const boundAddAttractionAction = addAttractionAction.bind(null, eventId);
 
   return (
-    <main className="mx-auto max-w-md p-8">
+    <main className="mx-auto flex max-w-md flex-col gap-6 p-8">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Editar evento</CardTitle>
         </CardHeader>
         <CardContent>
-          {error && (
+          {error === "1" && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>
                 Verifique os campos preenchidos.
               </AlertDescription>
             </Alert>
           )}
-          <form action={boundAction}>
+          <form action={boundUpdateAction}>
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="name">Nome do evento</FieldLabel>
@@ -123,6 +179,15 @@ export default async function EditEventPage({
                   id="description"
                   name="description"
                   defaultValue={event.description ?? ""}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="coverImageUrl">
+                  Capa do evento (opcional)
+                </FieldLabel>
+                <ImageUpload
+                  name="coverImageUrl"
+                  defaultValue={event.coverImageUrl}
                 />
               </Field>
               <Field>
@@ -173,6 +238,20 @@ export default async function EditEventPage({
                 />
               </Field>
               <Field>
+                <FieldLabel htmlFor="confirmedAttendees">
+                  Pessoas confirmadas (opcional)
+                </FieldLabel>
+                <Input
+                  id="confirmedAttendees"
+                  name="confirmedAttendees"
+                  type="number"
+                  step="1"
+                  min="0"
+                  defaultValue={event.confirmedAttendees ?? ""}
+                  className="font-mono"
+                />
+              </Field>
+              <Field>
                 <FieldLabel htmlFor="status">Status</FieldLabel>
                 <select
                   id="status"
@@ -188,6 +267,79 @@ export default async function EditEventPage({
                 </select>
               </Field>
               <Button type="submit">Salvar</Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Atrações</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {error === "attraction" && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Verifique o nome da atração.
+              </AlertDescription>
+            </Alert>
+          )}
+          {event.attractions.length > 0 && (
+            <ul className="flex flex-col gap-3">
+              {event.attractions.map((attraction) => (
+                <li
+                  key={attraction.id}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3">
+                    {attraction.photoUrl ? (
+                      <img
+                        src={attraction.photoUrl}
+                        alt=""
+                        className="size-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <span className="flex size-10 items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground">
+                        {attraction.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <span className="text-sm font-medium">
+                      {attraction.name}
+                    </span>
+                  </div>
+                  <form
+                    action={removeAttractionAction.bind(
+                      null,
+                      eventId,
+                      attraction.id,
+                    )}
+                  >
+                    <Button type="submit" variant="outline" size="sm">
+                      Remover
+                    </Button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form
+            action={boundAddAttractionAction}
+            className="flex flex-col gap-3 border-t border-border pt-4"
+          >
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="attractionName">Nome</FieldLabel>
+                <Input id="attractionName" name="name" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="attractionPhoto">
+                  Foto (opcional)
+                </FieldLabel>
+                <ImageUpload name="photoUrl" />
+              </Field>
+              <Button type="submit" variant="outline">
+                Adicionar atração
+              </Button>
             </FieldGroup>
           </form>
         </CardContent>
