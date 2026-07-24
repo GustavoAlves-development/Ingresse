@@ -46,22 +46,24 @@ enum EventStatus {
 }
 
 model Event {
-  id               String      @id @default(uuid())
-  organizerId      String
-  name             String
-  slug             String      @unique
-  description      String?
-  location         String
-  startsAt         DateTime
-  ticketPriceCents Int
-  capacity         Int
-  status           EventStatus @default(DRAFT)
-  coverImageUrl    String?
-  createdAt        DateTime    @default(now())
+  id                String      @id @default(uuid())
+  organizerId       String
+  name              String
+  slug              String      @unique
+  description       String?
+  location          String
+  startsAt          DateTime
+  ticketPriceCents  Int
+  capacity          Int
+  status            EventStatus @default(DRAFT)
+  coverImageUrl     String?
+  confirmedAttendees Int?
+  createdAt         DateTime    @default(now())
 
-  organizer Organizer @relation(fields: [organizerId], references: [id])
-  orders    Order[]
-  tickets   Ticket[]
+  organizer    Organizer    @relation(fields: [organizerId], references: [id])
+  orders       Order[]
+  tickets      Ticket[]
+  attractions  Attraction[]
 
   @@index([organizerId])
 }
@@ -138,4 +140,18 @@ model CheckInAttempt {
   scannedBy User   @relation(fields: [scannedByUserId], references: [id])
 
   @@index([ticketId])
+}
+
+model Attraction {
+  id          String   @id @default(uuid())
+  eventId     String
+  organizerId String // denormalizado de Event, evita join para filtrar por tenant (mesmo padrão de Order/Ticket)
+  name        String
+  photoUrl    String?
+  createdAt   DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@index([eventId])
+  @@index([organizerId])
 }
