@@ -46,24 +46,24 @@ enum EventStatus {
 }
 
 model Event {
-  id                String      @id @default(uuid())
-  organizerId       String
-  name              String
-  slug              String      @unique
-  description       String?
-  location          String
-  startsAt          DateTime
-  ticketPriceCents  Int
-  capacity          Int
-  status            EventStatus @default(DRAFT)
-  coverImageUrl     String?
+  id                 String      @id @default(uuid())
+  organizerId        String
+  name               String
+  slug               String      @unique
+  description        String?
+  location           String
+  startsAt           DateTime
+  ticketPriceCents   Int
+  capacity           Int
+  status             EventStatus @default(DRAFT)
+  coverImageUrl      String?
   confirmedAttendees Int?
-  createdAt         DateTime    @default(now())
+  createdAt          DateTime    @default(now())
 
-  organizer    Organizer    @relation(fields: [organizerId], references: [id])
-  orders       Order[]
-  tickets      Ticket[]
-  attractions  Attraction[]
+  organizer   Organizer    @relation(fields: [organizerId], references: [id])
+  orders      Order[]
+  tickets     Ticket[]
+  attractions Attraction[]
 
   @@index([organizerId])
 }
