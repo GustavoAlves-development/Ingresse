@@ -3,6 +3,17 @@ import { auth } from "@/auth";
 import { createEvent } from "@/lib/db/eventRepository";
 import { createEventSchema } from "@/lib/events/eventSchema";
 import { slugify } from "@/lib/events/slugify";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 async function createEventAction(formData: FormData) {
   "use server";
@@ -56,61 +67,74 @@ export default async function NewEventPage({
 
   return (
     <main className="mx-auto max-w-md p-8">
-      <h1 className="mb-6 text-xl font-semibold">Novo evento</h1>
-      {error && (
-        <p className="mb-4 text-sm text-red-500">
-          Verifique os campos preenchidos.
-        </p>
-      )}
-      <form action={createEventAction} className="flex flex-col gap-4">
-        <input
-          name="name"
-          placeholder="Nome do evento"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <textarea
-          name="description"
-          placeholder="Descrição (opcional)"
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="location"
-          placeholder="Local"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="startsAt"
-          type="datetime-local"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="ticketPriceReais"
-          type="number"
-          step="0.01"
-          min="0.01"
-          placeholder="Preço do ingresso (R$)"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="capacity"
-          type="number"
-          step="1"
-          min="1"
-          placeholder="Capacidade"
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-3 py-2 text-white"
-        >
-          Criar evento
-        </button>
-      </form>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Novo evento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                Verifique os campos preenchidos.
+              </AlertDescription>
+            </Alert>
+          )}
+          <form action={createEventAction}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="name">Nome do evento</FieldLabel>
+                <Input id="name" name="name" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="description">
+                  Descrição (opcional)
+                </FieldLabel>
+                <Textarea id="description" name="description" />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="location">Local</FieldLabel>
+                <Input id="location" name="location" required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="startsAt">Data e hora</FieldLabel>
+                <Input
+                  id="startsAt"
+                  name="startsAt"
+                  type="datetime-local"
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="ticketPriceReais">
+                  Preço do ingresso (R$)
+                </FieldLabel>
+                <Input
+                  id="ticketPriceReais"
+                  name="ticketPriceReais"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  required
+                  className="font-mono"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="capacity">Capacidade</FieldLabel>
+                <Input
+                  id="capacity"
+                  name="capacity"
+                  type="number"
+                  step="1"
+                  min="1"
+                  required
+                  className="font-mono"
+                />
+              </Field>
+              <Button type="submit">Criar evento</Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }

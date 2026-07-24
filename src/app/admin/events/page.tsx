@@ -2,6 +2,21 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { listEventsByOrganizer } from "@/lib/db/eventRepository";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+const STATUS_LABELS: Record<string, string> = {
+  DRAFT: "Rascunho",
+  PUBLISHED: "Publicado",
+  CLOSED: "Encerrado",
+};
+
+const STATUS_CLASSES: Record<string, string> = {
+  DRAFT: "border-border text-muted-foreground",
+  PUBLISHED: "border-success/30 bg-success/15 text-success",
+  CLOSED: "border-border bg-secondary text-secondary-foreground",
+};
 
 export default async function EventsListPage() {
   const session = await auth();
@@ -14,38 +29,39 @@ export default async function EventsListPage() {
   return (
     <main className="mx-auto max-w-3xl p-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Meus eventos</h1>
-        <Link
-          href="/admin/events/new"
-          className="rounded bg-blue-600 px-3 py-2 text-white"
-        >
+        <h1 className="font-heading text-xl font-semibold">Meus eventos</h1>
+        <Button render={<Link href="/admin/events/new" />} nativeButton={false}>
           Novo evento
-        </Link>
+        </Button>
       </div>
       {events.length === 0 ? (
-        <p>Nenhum evento criado ainda.</p>
+        <p className="text-muted-foreground">Nenhum evento criado ainda.</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {events.map((event) => (
-            <li
-              key={event.id}
-              className="flex items-center justify-between rounded border border-gray-700 p-4"
-            >
-              <div>
-                <p className="font-medium">{event.name}</p>
-                <p className="text-sm text-gray-400">
-                  {event.location} — {event.status}
-                </p>
-              </div>
-              <Link
-                href={`/admin/events/${event.id}/edit`}
-                className="text-blue-400 underline"
-              >
-                Editar
-              </Link>
-            </li>
+            <Card key={event.id}>
+              <CardContent className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{event.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {event.location}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className={STATUS_CLASSES[event.status]}>
+                    {STATUS_LABELS[event.status] ?? event.status}
+                  </Badge>
+                  <Link
+                    href={`/admin/events/${event.id}/edit`}
+                    className="text-sm text-primary underline underline-offset-4"
+                  >
+                    Editar
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
     </main>
   );

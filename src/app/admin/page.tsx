@@ -1,30 +1,29 @@
 import Link from "next/link";
-import { auth, signOut } from "@/auth";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-export default async function AdminHomePage() {
-  const session = await auth();
-
+export default function AdminHomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <p>
-        Logado como {session?.user?.name} ({session?.user?.role})
-      </p>
-      <Link href="/admin/events" className="text-blue-400 underline">
-        Meus eventos
-      </Link>
-      <form
-        action={async () => {
-          "use server";
-          await signOut({ redirectTo: "/login" });
-        }}
-      >
-        <button
-          type="submit"
-          className="rounded bg-gray-700 px-3 py-2 text-white"
-        >
-          Sair
-        </button>
-      </form>
+    <main className="mx-auto max-w-3xl p-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Painel do organizador</CardTitle>
+          <CardDescription>
+            Gerencie os eventos e ingressos da sua organização.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button render={<Link href="/admin/events" />} nativeButton={false}>
+            Meus eventos
+          </Button>
+        </CardContent>
+      </Card>
     </main>
   );
 }

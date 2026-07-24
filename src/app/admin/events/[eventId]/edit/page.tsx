@@ -3,6 +3,17 @@ import { auth } from "@/auth";
 import { findEventForOrganizer, updateEvent } from "@/lib/db/eventRepository";
 import { toSaoPauloDatetimeLocalValue } from "@/lib/events/eventDateTime";
 import { updateEventSchema } from "@/lib/events/eventSchema";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Field, FieldLabel, FieldGroup } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 async function updateEventAction(eventId: string, formData: FormData) {
   "use server";
@@ -53,6 +64,15 @@ async function updateEventAction(eventId: string, formData: FormData) {
   redirect("/admin/events");
 }
 
+const STATUS_OPTIONS = [
+  { value: "DRAFT", label: "Rascunho" },
+  { value: "PUBLISHED", label: "Publicado" },
+  { value: "CLOSED", label: "Encerrado" },
+];
+
+const nativeSelectClassName =
+  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
+
 export default async function EditEventPage({
   params,
   searchParams,
@@ -77,71 +97,101 @@ export default async function EditEventPage({
 
   return (
     <main className="mx-auto max-w-md p-8">
-      <h1 className="mb-6 text-xl font-semibold">Editar evento</h1>
-      {error && (
-        <p className="mb-4 text-sm text-red-500">
-          Verifique os campos preenchidos.
-        </p>
-      )}
-      <form action={boundAction} className="flex flex-col gap-4">
-        <input
-          name="name"
-          defaultValue={event.name}
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <textarea
-          name="description"
-          defaultValue={event.description ?? ""}
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="location"
-          defaultValue={event.location}
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="startsAt"
-          type="datetime-local"
-          defaultValue={toSaoPauloDatetimeLocalValue(event.startsAt)}
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="ticketPriceReais"
-          type="number"
-          step="0.01"
-          min="0.01"
-          defaultValue={(event.ticketPriceCents / 100).toFixed(2)}
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <input
-          name="capacity"
-          type="number"
-          step="1"
-          min="1"
-          defaultValue={event.capacity}
-          required
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        />
-        <select
-          name="status"
-          defaultValue={event.status}
-          className="rounded border border-gray-700 bg-transparent px-3 py-2"
-        >
-          <option value="DRAFT">Rascunho</option>
-          <option value="PUBLISHED">Publicado</option>
-          <option value="CLOSED">Encerrado</option>
-        </select>
-        <button
-          type="submit"
-          className="rounded bg-blue-600 px-3 py-2 text-white"
-        >
-          Salvar
-        </button>
-      </form>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Editar evento</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                Verifique os campos preenchidos.
+              </AlertDescription>
+            </Alert>
+          )}
+          <form action={boundAction}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="name">Nome do evento</FieldLabel>
+                <Input id="name" name="name" defaultValue={event.name} required />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="description">
+                  Descrição (opcional)
+                </FieldLabel>
+                <Textarea
+                  id="description"
+                  name="description"
+                  defaultValue={event.description ?? ""}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="location">Local</FieldLabel>
+                <Input
+                  id="location"
+                  name="location"
+                  defaultValue={event.location}
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="startsAt">Data e hora</FieldLabel>
+                <Input
+                  id="startsAt"
+                  name="startsAt"
+                  type="datetime-local"
+                  defaultValue={toSaoPauloDatetimeLocalValue(event.startsAt)}
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="ticketPriceReais">
+                  Preço do ingresso (R$)
+                </FieldLabel>
+                <Input
+                  id="ticketPriceReais"
+                  name="ticketPriceReais"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  defaultValue={(event.ticketPriceCents / 100).toFixed(2)}
+                  required
+                  className="font-mono"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="capacity">Capacidade</FieldLabel>
+                <Input
+                  id="capacity"
+                  name="capacity"
+                  type="number"
+                  step="1"
+                  min="1"
+                  defaultValue={event.capacity}
+                  required
+                  className="font-mono"
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="status">Status</FieldLabel>
+                <select
+                  id="status"
+                  name="status"
+                  defaultValue={event.status}
+                  className={nativeSelectClassName}
+                >
+                  {STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Button type="submit">Salvar</Button>
+            </FieldGroup>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }
