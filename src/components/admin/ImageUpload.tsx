@@ -6,9 +6,11 @@ import { useState } from "react";
 export function ImageUpload({
   name,
   defaultValue,
+  onChange,
 }: {
   name: string;
   defaultValue?: string | null;
+  onChange?: (url: string) => void;
 }) {
   const [url, setUrl] = useState(defaultValue ?? "");
   const [status, setStatus] = useState<"idle" | "uploading" | "error">(
@@ -28,6 +30,7 @@ export function ImageUpload({
         handleUploadUrl: "/api/upload",
       });
       setUrl(blob.url);
+      onChange?.(blob.url);
       setStatus("idle");
     } catch {
       setStatus("error");
