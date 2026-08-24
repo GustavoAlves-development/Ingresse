@@ -4,26 +4,19 @@ Documento de passagem do projeto. Escrito em 2026-08-24 depois de uma sessão de
 
 ## O que é o projeto
 
-SaaS de venda de ingressos + controle de portaria. Next.js (App Router) + Prisma + Postgres (Neon) + Mercado Pago (pagamento) + Vercel Blob (upload de imagem) + Resend (e-mail transacional). Deploy só acontece via Vercel — **não há ambiente local rodando**, todo teste é feito direto no deploy.
+SaaS de venda de ingressos + controle de portaria. Next.js (App Router) + Prisma + Postgres (Neon) + Mercado Pago (pagamento) + Vercel Blob (upload de imagem) + Resend (e-mail transacional). Deploy só acontece via Vercel — **não há ambiente local rodando e não há suíte de testes automatizada** (removida deliberadamente, ver seção abaixo). Toda validação é feita direto no deploy de produção.
 
 Fluxo principal: organizador cria evento → publica → compartilha link público → comprador preenche formulário e paga via Mercado Pago → webhook confirma pagamento → sistema gera ticket com QR code e manda por e-mail → no dia do evento, equipe de portaria escaneia o QR em `/portaria/[eventId]` pra validar entrada.
 
-Domínio de produção: **ingresse.site** (migrado de `ingresse-drab.vercel.app` durante essa sessão — ver seção de config pendente).
+Domínio de produção: **ingresse.site**. A migração de domínio (Vercel Domains + DNS + `APP_URL` + webhook do Mercado Pago) fica por conta de quem está passando o projeto — deve chegar já resolvida.
 
 ## 🔴 Config pendente — fazer isso primeiro
 
-Sem isso o sistema não funciona de ponta a ponta:
+Sem isso o pagamento não funciona de ponta a ponta:
 
-1. **Migração de domínio para `ingresse.site`** (em andamento, iniciada nesta sessão):
-   - [ ] Vercel → Domains → confirmar que `ingresse.site` está adicionado e o DNS resolvendo
-   - [ ] Vercel → Settings → Environment Variables → `APP_URL` = `https://ingresse.site` (sem barra no final) → redeploy
-   - [ ] Painel do Mercado Pago → Webhooks → atualizar a URL cadastrada para `https://ingresse.site/api/webhooks/mercadopago`
+1. **`MERCADO_PAGO_WEBHOOK_SECRET`** — ainda não configurado. Sem ele, o Mercado Pago nunca consegue confirmar um pagamento (a rota rejeita a notificação por assinatura inválida) e **nenhum ticket é gerado mesmo com o pagamento aprovado**. Pegar em: painel MP → aplicação → Webhooks → configurar a URL `https://ingresse.site/api/webhooks/mercadopago` com o evento "Pagamentos" → copiar a chave secreta gerada ali (não confundir com `client_secret`, que é de OAuth e não é usado neste projeto).
 
-2. **`MERCADO_PAGO_WEBHOOK_SECRET`** — ainda não configurado. Sem ele, o Mercado Pago nunca consegue confirmar um pagamento (a rota rejeita a notificação por assinatura inválida) e **nenhum ticket é gerado mesmo com o pagamento aprovado**. Pegar em: painel MP → aplicação → Webhooks → configurar a URL acima com o evento "Pagamentos" → copiar a chave secreta gerada (não confundir com `client_secret`, que é de OAuth e não é usado aqui).
-
-3. **Credenciais do Mercado Pago são de PRODUÇÃO** (`APP_USR-...`, não `TEST-...`). Isso significa que qualquer checkout completado agora cobra dinheiro de verdade. Decidir: manter assim, ou trocar por credenciais de teste (aba "Credenciais de teste" na mesma aplicação do painel MP) enquanto ainda estiver validando o sistema.
-
-4. **Banco de dados de teste quebrado** (`.env.test`, `DATABASE_URL` de um Neon separado) — autenticação falhando (`authentication failed`). Isso bloqueia **54 dos 109 testes automatizados** (tudo que toca banco: order, ticket, event, user, organizer, attraction repositories + rotas de webhook/validate). `npx vitest run` mostra isso claramente. Precisa gerar credenciais novas desse branch/projeto Neon (ou apontar pra um novo) e atualizar `.env.test`.
+2. **Credenciais do Mercado Pago são de PRODUÇÃO** (`APP_USR-...`, não `TEST-...`). Isso significa que qualquer checkout completado cobra dinheiro de verdade. Se ainda for validar o fluxo de compra manualmente, considerar trocar temporariamente pelas credenciais de teste (aba "Credenciais de teste" na mesma aplicação do painel MP).
 
 ## O que foi corrigido nesta sessão (já em produção)
 
@@ -36,29 +29,34 @@ Prova de que cada item foi testado de verdade, não só lido no código:
 - **Login de portaria não ia pra lugar nenhum** — todo login redirecionava pra `/admin`, que bloqueia quem não é `ORGANIZER_ADMIN` e devolvia pro `/login` sem explicação. Agora login vai pra `/` (home), que redireciona por papel (`PORTARIA_STAFF` → `/portaria`, resto → `/admin`).
 - **Sem navegação para Portaria/Equipe** — só existiam as páginas, sem link nenhum. Adicionado nav no header ([src/components/layout/AppHeader.tsx](src/components/layout/AppHeader.tsx)) e botões na home do admin.
 
+## Suíte de testes — removida de propósito
+
+O projeto tinha ~22 arquivos `*.test.ts` (vitest) rodando contra um banco Postgres de teste separado (Neon). Ninguém rodava isso (sem CI, sem execução local) e as credenciais desse banco de teste estavam inválidas, bloqueando boa parte da suíte. Removidos nesta sessão: todos os `*.test.ts`/`*.test.tsx`, `vitest.config.ts`, `tests/testDb.ts`, `.env.test`, o script `test` do `package.json`, e as dependências `vitest`/`dotenv`. `npx tsc --noEmit` continua limpo depois da remoção.
+
+Se decidirem que vale a pena ter testes automatizados de novo no futuro, é começar do zero — não tem nada pra "reativar".
+
 ## O que ainda falta (não implementado)
 
-Por prioridade, do que mais afeta o produto pro que é cosmético:
+Por prioridade, do que mais afeta o produto pro que é cosmético. **Reembolso não está nessa lista de propósito** — não é uma funcionalidade planejada para o produto.
 
-1. **Painel de vendas/pedidos** — organizador não vê quantos ingressos vendeu, quem comprou, receita por evento. Só cria/edita evento. Provavelmente a próxima coisa mais importante depois da config pendente acima.
-2. **Reembolso** — `OrderStatus.REFUNDED` existe no schema do Prisma mas nenhum código nunca seta esse status. Hoje, estornar um pedido só editando o banco na mão.
-3. **"Esqueci minha senha"** — não existe. Só signup/login.
-4. **Excluir evento** — não existe rota nem UI pra deletar um evento. (Isso ficou visível porque criei 2 eventos de teste — "QA Capacidade Teste" e "QA MP Diag" — que continuam na lista de eventos de produção sem forma de remover pela UI.)
-5. **E-mail do ticket sai de `ingressos@resend.dev`** (domínio de teste do Resend), não de um domínio próprio. Cosmético — pra trocar, precisa verificar `ingresse.site` (ou outro domínio) no Resend e atualizar `from` em [src/lib/email/sendTicketEmail.tsx](src/lib/email/sendTicketEmail.tsx).
-6. **Gerenciar equipe de portaria é só criar/listar** — não dá pra remover ou editar um membro pela UI de `/admin/team`.
+1. **Painel de vendas/pedidos** — organizador não vê quantos ingressos vendeu, quem comprou, receita por evento. Só cria/edita evento. Provavelmente a próxima coisa mais importante depois de configurar o webhook do Mercado Pago.
+2. **"Esqueci minha senha"** — não existe. Só signup/login.
+3. **Excluir evento** — não existe rota nem UI pra deletar um evento. (Isso ficou visível porque criei 2 eventos de teste — "QA Capacidade Teste" e "QA MP Diag" — que continuam na lista de eventos de produção sem forma de remover pela UI.)
+4. **E-mail do ticket sai de `ingressos@resend.dev`** (domínio de teste do Resend), não de um domínio próprio. Cosmético — pra trocar, precisa verificar `ingresse.site` (ou outro domínio) no Resend e atualizar `from` em [src/lib/email/sendTicketEmail.tsx](src/lib/email/sendTicketEmail.tsx).
+5. **Gerenciar equipe de portaria é só criar/listar** — não dá pra remover ou editar um membro pela UI de `/admin/team`.
 
 ## Eventos de teste para limpar
 
-"QA Capacidade Teste" e "QA MP Diag" foram criados durante a verificação desta sessão (capacidade 1 e 5, respectivamente) e continuam publicados. Sem função de deletar evento no sistema (item 4 acima) — hoje só dá pra remover direto no banco, ou implementar a função de exclusão primeiro.
+"QA Capacidade Teste" e "QA MP Diag" foram criados durante a verificação desta sessão (capacidade 1 e 5, respectivamente) e continuam publicados. Sem função de deletar evento no sistema (item 3 acima) — hoje só dá pra remover direto no banco, ou implementar a função de exclusão primeiro.
 
-## Como validar mudanças (não tem ambiente local)
+## Como validar mudanças (não tem ambiente local nem testes automatizados)
 
-Este projeto só roda via Vercel — não use `npm run dev` esperando testar de verdade. Para verificar uma mudança:
+Este projeto só roda via Vercel — não use `npm run dev` esperando testar de verdade, e não tem `npm test` (ver seção acima). Para verificar uma mudança:
 1. Commitar e dar push (dispara deploy automático na Vercel)
 2. Esperar o deploy (checar `https://ingresse.site/<rota>` até parar de dar 404/erro do deploy anterior)
 3. Testar a funcionalidade real no domínio de produção
 
-`npx tsc --noEmit` e `npx vitest run` (com a ressalva do banco de teste quebrado, item 4) ainda valem a pena rodar antes de commitar.
+`npx tsc --noEmit` ainda vale a pena rodar antes de commitar — é a única verificação automática que sobrou.
 
 ## Contas de teste existentes
 
