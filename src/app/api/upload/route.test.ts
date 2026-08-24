@@ -5,9 +5,11 @@ vi.mock("@/auth", () => ({
   auth: authMock,
 }));
 
-const putMock = vi.fn(async (pathname: string) => ({
-  url: `https://example-blob.vercel-storage.com/${pathname}`,
-}));
+const putMock = vi.fn(
+  async (pathname: string, _body: File, _options: Record<string, unknown>) => ({
+    url: `https://example-blob.vercel-storage.com/${pathname}`,
+  }),
+);
 vi.mock("@vercel/blob", () => ({
   put: putMock,
 }));

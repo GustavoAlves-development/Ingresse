@@ -18,9 +18,23 @@ export default function AdminHomePage() {
             Gerencie os eventos e ingressos da sua organização.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap gap-3">
           <Button render={<Link href="/admin/events" />} nativeButton={false}>
             Meus eventos
+          </Button>
+          <Button
+            render={<Link href="/portaria" />}
+            nativeButton={false}
+            variant="outline"
+          >
+            Portaria
+          </Button>
+          <Button
+            render={<Link href="/admin/team" />}
+            nativeButton={false}
+            variant="outline"
+          >
+            Equipe
           </Button>
         </CardContent>
       </Card>

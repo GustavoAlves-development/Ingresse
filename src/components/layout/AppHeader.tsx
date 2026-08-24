@@ -25,19 +25,45 @@ export async function AppHeader() {
           ingresse
         </Link>
         {session?.user && (
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {session.user.name}
-              <span className="text-muted-foreground/70">
-                {" "}
-                · {ROLE_LABELS[session.user.role] ?? session.user.role}
+          <div className="flex items-center gap-6">
+            <nav className="flex items-center gap-4 text-sm">
+              {session.user.role === "ORGANIZER_ADMIN" && (
+                <>
+                  <Link
+                    href="/admin/events"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Meus eventos
+                  </Link>
+                  <Link
+                    href="/admin/team"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Equipe
+                  </Link>
+                </>
+              )}
+              <Link
+                href="/portaria"
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Portaria
+              </Link>
+            </nav>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                {session.user.name}
+                <span className="text-muted-foreground/70">
+                  {" "}
+                  · {ROLE_LABELS[session.user.role] ?? session.user.role}
+                </span>
               </span>
-            </span>
-            <form action={signOutAction}>
-              <Button type="submit" variant="secondary" size="sm">
-                Sair
-              </Button>
-            </form>
+              <form action={signOutAction}>
+                <Button type="submit" variant="secondary" size="sm">
+                  Sair
+                </Button>
+              </form>
+            </div>
           </div>
         )}
       </div>

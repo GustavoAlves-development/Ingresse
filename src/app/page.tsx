@@ -1,7 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await auth();
+  if (session?.user) {
+    redirect(session.user.role === "PORTARIA_STAFF" ? "/portaria" : "/admin");
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
       <h1 className="brand-glow font-heading text-4xl font-semibold tracking-tight text-foreground">

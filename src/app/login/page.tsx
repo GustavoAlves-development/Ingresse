@@ -35,7 +35,7 @@ async function loginAction(formData: FormData) {
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/admin",
+      redirectTo: "/",
     });
   } catch (error) {
     if (error instanceof AuthError) {

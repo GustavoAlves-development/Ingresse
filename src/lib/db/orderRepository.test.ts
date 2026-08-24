@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { resetDatabase, testPrisma } from "../../../tests/testDb";
 import {
   createOrder,
+  EventSoldOutError,
   findOrderById,
   markOrderAsPaidAndCreateTickets,
 } from "./orderRepository";
@@ -40,10 +41,59 @@ describe("orderRepository", () => {
         buyerEmail: "comprador@teste.dev",
         quantity: 2,
         totalAmountCents: 10000,
+        capacity: 100,
       });
 
       expect(order.status).toBe("PENDING");
       expect(order.organizerId).toBe(organizerId);
+    });
+
+    it("rejects the order when quantity exceeds remaining capacity", async () => {
+      await createOrder({
+        eventId,
+        organizerId,
+        buyerName: "Primeiro Comprador",
+        buyerEmail: "primeiro@teste.dev",
+        quantity: 95,
+        totalAmountCents: 475000,
+        capacity: 100,
+      });
+
+      await expect(
+        createOrder({
+          eventId,
+          organizerId,
+          buyerName: "Segundo Comprador",
+          buyerEmail: "segundo@teste.dev",
+          quantity: 10,
+          totalAmountCents: 50000,
+          capacity: 100,
+        }),
+      ).rejects.toThrow(EventSoldOutError);
+    });
+
+    it("counts pending orders (not just paid) against capacity", async () => {
+      await createOrder({
+        eventId,
+        organizerId,
+        buyerName: "Comprador Pendente",
+        buyerEmail: "pendente@teste.dev",
+        quantity: 100,
+        totalAmountCents: 500000,
+        capacity: 100,
+      });
+
+      await expect(
+        createOrder({
+          eventId,
+          organizerId,
+          buyerName: "Outro Comprador",
+          buyerEmail: "outro@teste.dev",
+          quantity: 1,
+          totalAmountCents: 5000,
+          capacity: 100,
+        }),
+      ).rejects.toThrow(EventSoldOutError);
     });
   });
 
@@ -56,6 +106,7 @@ describe("orderRepository", () => {
         buyerEmail: "comprador@teste.dev",
         quantity: 2,
         totalAmountCents: 10000,
+        capacity: 100,
       });
 
       const result = await markOrderAsPaidAndCreateTickets({
@@ -82,6 +133,7 @@ describe("orderRepository", () => {
         buyerEmail: "comprador@teste.dev",
         quantity: 1,
         totalAmountCents: 5000,
+        capacity: 100,
       });
 
       const first = await markOrderAsPaidAndCreateTickets({
@@ -110,6 +162,7 @@ describe("orderRepository", () => {
         buyerEmail: "concorrente@teste.dev",
         quantity: 1,
         totalAmountCents: 5000,
+        capacity: 100,
       });
 
       const [first, second] = await Promise.all([

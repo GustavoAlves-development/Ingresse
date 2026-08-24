@@ -1,4 +1,4 @@
-import { OrderStatus, TicketStatus } from "@prisma/client";
+import { OrderStatus, Prisma, TicketStatus } from "@prisma/client";
 import { generateQrToken } from "../tickets/qrToken";
 import { prisma } from "./prismaClient";
 
@@ -9,10 +9,42 @@ type CreateOrderInput = {
   buyerEmail: string;
   quantity: number;
   totalAmountCents: number;
+  capacity: number;
 };
 
+export class EventSoldOutError extends Error {
+  constructor() {
+    super("O evento não tem vagas suficientes para essa quantidade de ingressos");
+    this.name = "EventSoldOutError";
+  }
+}
+
 export async function createOrder(input: CreateOrderInput) {
-  return prisma.order.create({ data: input });
+  const { capacity, ...orderData } = input;
+
+  return prisma.$transaction(
+    async (tx) => {
+      // Soma pedidos PAID e PENDING: a vaga é reservada assim que o
+      // checkout começa, não só quando o pagamento é confirmado — evita
+      // vender além da capacidade enquanto pagamentos estão em andamento
+      // no Mercado Pago. Isolamento serializable evita que dois checkouts
+      // simultâneos leiam a mesma contagem e passem os dois pela checagem.
+      const reserved = await tx.order.aggregate({
+        where: {
+          eventId: input.eventId,
+          status: { in: [OrderStatus.PAID, OrderStatus.PENDING] },
+        },
+        _sum: { quantity: true },
+      });
+
+      if ((reserved._sum.quantity ?? 0) + input.quantity > capacity) {
+        throw new EventSoldOutError();
+      }
+
+      return tx.order.create({ data: orderData });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+  );
 }
 
 export async function findOrderById(orderId: string) {

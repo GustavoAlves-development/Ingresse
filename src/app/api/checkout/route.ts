@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { findEventById } from "@/lib/db/eventRepository";
-import { createOrder } from "@/lib/db/orderRepository";
+import { createOrder, EventSoldOutError } from "@/lib/db/orderRepository";
 import { getAppUrl } from "@/lib/env/appUrl";
 import { createCheckoutPreference } from "@/lib/payments/mercadoPago";
 
@@ -36,16 +36,28 @@ export async function POST(request: Request) {
   // aceito como campo de formulário, para não permitir manipulação de valor.
   const totalAmountCents = event.ticketPriceCents * quantity;
 
-  const order = await createOrder({
-    eventId: event.id,
-    organizerId: event.organizerId,
-    buyerName,
-    buyerEmail,
-    quantity,
-    totalAmountCents,
-  });
-
   const appUrl = getAppUrl();
+
+  let order;
+  try {
+    order = await createOrder({
+      eventId: event.id,
+      organizerId: event.organizerId,
+      buyerName,
+      buyerEmail,
+      quantity,
+      totalAmountCents,
+      capacity: event.capacity,
+    });
+  } catch (error) {
+    if (error instanceof EventSoldOutError) {
+      return NextResponse.redirect(
+        `${appUrl}/e/${event.slug}?status=sold_out`,
+        { status: 303 },
+      );
+    }
+    throw error;
+  }
 
   const preference = await createCheckoutPreference({
     orderId: order.id,

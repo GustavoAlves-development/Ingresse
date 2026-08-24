@@ -38,6 +38,13 @@ export default async function PublicEventPage({
           </AlertDescription>
         </Alert>
       )}
+      {status === "sold_out" && (
+        <Alert variant="destructive">
+          <AlertDescription>
+            Não há mais ingressos disponíveis para a quantidade solicitada.
+          </AlertDescription>
+        </Alert>
+      )}
       <EventShowcase
         name={event.name}
         location={event.location}

@@ -29,3 +29,10 @@ export async function findUserForOrganizer(
 ) {
   return prisma.user.findFirst({ where: { id: userId, organizerId } });
 }
+
+export async function listUsersByOrganizer(organizerId: string) {
+  return prisma.user.findMany({
+    where: { organizerId },
+    orderBy: { createdAt: "asc" },
+  });
+}
