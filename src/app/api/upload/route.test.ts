@@ -80,9 +80,13 @@ describe("POST /api/upload", () => {
 
     expect(response.status).toBe(200);
     expect(body.url).toBe("https://example-blob.vercel-storage.com/test.png");
-    expect(putMock).toHaveBeenCalledWith(
-      "test.png",
-      file,
+    expect(putMock).toHaveBeenCalledTimes(1);
+    const [pathname, uploadedFile, options] = putMock.mock.calls[0];
+    expect(pathname).toBe("test.png");
+    expect(uploadedFile).toBeInstanceOf(File);
+    expect((uploadedFile as File).name).toBe(file.name);
+    expect((uploadedFile as File).type).toBe(file.type);
+    expect(options).toEqual(
       expect.objectContaining({ access: "public", contentType: "image/png" }),
     );
   });

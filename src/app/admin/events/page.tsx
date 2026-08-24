@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { listEventsByOrganizer } from "@/lib/db/eventRepository";
+import { getAppUrl } from "@/lib/env/appUrl";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,7 +27,7 @@ export default async function EventsListPage() {
   }
 
   const events = await listEventsByOrganizer(session.user.organizerId);
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppUrl();
 
   return (
     <main className="mx-auto max-w-3xl p-8">

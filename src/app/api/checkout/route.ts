@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { findEventById } from "@/lib/db/eventRepository";
 import { createOrder } from "@/lib/db/orderRepository";
+import { getAppUrl } from "@/lib/env/appUrl";
 import { createCheckoutPreference } from "@/lib/payments/mercadoPago";
 
 const checkoutSchema = z.object({
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     totalAmountCents,
   });
 
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const appUrl = getAppUrl();
 
   const preference = await createCheckoutPreference({
     orderId: order.id,
