@@ -8,15 +8,15 @@ SaaS de venda de ingressos + controle de portaria. Next.js (App Router) + Prisma
 
 Fluxo principal: organizador cria evento → publica → compartilha link público → comprador preenche formulário e paga via Mercado Pago → webhook confirma pagamento → sistema gera ticket com QR code e manda por e-mail → no dia do evento, equipe de portaria escaneia o QR em `/portaria/[eventId]` pra validar entrada.
 
-Domínio de produção: **ingresse.site**. A migração de domínio (Vercel Domains + DNS + `APP_URL` + webhook do Mercado Pago) fica por conta de quem está passando o projeto — deve chegar já resolvida.
+Domínio de produção: **ingresse.site** (ainda não resolvendo em 2026-08-24 — testei e a URL não carrega; ver seção de config pendente). Enquanto isso, o deploy segue acessível pela URL da Vercel (`ingresse-drab.vercel.app`).
 
 ## 🔴 Config pendente — fazer isso primeiro
 
-Sem isso o pagamento não funciona de ponta a ponta:
-
-1. **`MERCADO_PAGO_WEBHOOK_SECRET`** — ainda não configurado. Sem ele, o Mercado Pago nunca consegue confirmar um pagamento (a rota rejeita a notificação por assinatura inválida) e **nenhum ticket é gerado mesmo com o pagamento aprovado**. Pegar em: painel MP → aplicação → Webhooks → configurar a URL `https://ingresse.site/api/webhooks/mercadopago` com o evento "Pagamentos" → copiar a chave secreta gerada ali (não confundir com `client_secret`, que é de OAuth e não é usado neste projeto).
+1. **Domínio `ingresse.site` ainda não resolve** — confirmado nesta sessão que a URL não carrega ainda. Verificar Vercel → Domains (DNS provavelmente ainda propagando ou não configurado) antes de considerar a migração concluída.
 
 2. **Credenciais do Mercado Pago são de PRODUÇÃO** (`APP_USR-...`, não `TEST-...`). Isso significa que qualquer checkout completado cobra dinheiro de verdade. Se ainda for validar o fluxo de compra manualmente, considerar trocar temporariamente pelas credenciais de teste (aba "Credenciais de teste" na mesma aplicação do painel MP).
+
+3. **Fluxo de pagamento completo (compra real → webhook → ticket por e-mail) ainda não foi validado ponta a ponta** — não dá pra simular isso sem cobrar um cartão de verdade. O `MERCADO_PAGO_WEBHOOK_SECRET` já está configurado e confirmado funcionando (testei mandando uma notificação assinada corretamente vs. uma com assinatura errada — a rota aceita a certa e rejeita a errada com 401), mas a primeira compra real que passar por aqui vale a pena acompanhar de perto pra confirmar que o e-mail com o ticket chega.
 
 ## O que foi corrigido nesta sessão (já em produção)
 
@@ -53,7 +53,7 @@ Por prioridade, do que mais afeta o produto pro que é cosmético. **Reembolso n
 
 Este projeto só roda via Vercel — não use `npm run dev` esperando testar de verdade, e não tem `npm test` (ver seção acima). Para verificar uma mudança:
 1. Commitar e dar push (dispara deploy automático na Vercel)
-2. Esperar o deploy (checar `https://ingresse.site/<rota>` até parar de dar 404/erro do deploy anterior)
+2. Esperar o deploy (checar `https://ingresse-drab.vercel.app/<rota>` — ou `ingresse.site` assim que o domínio estiver resolvendo — até parar de dar 404/erro do deploy anterior)
 3. Testar a funcionalidade real no domínio de produção
 
 `npx tsc --noEmit` ainda vale a pena rodar antes de commitar — é a única verificação automática que sobrou.
