@@ -5,44 +5,48 @@ vi.mock("@/auth", () => ({
   auth: authMock,
 }));
 
-const handleUploadMock = vi.fn(
-  async ({
-    onBeforeGenerateToken,
-  }: {
-    onBeforeGenerateToken: (
-      pathname: string,
-    ) => Promise<Record<string, unknown>>;
-  }) => {
-    const tokenOptions = await onBeforeGenerateToken("test.png");
-    return {
-      type: "blob.generate-client-token",
-      clientToken: "fake-token",
-      ...tokenOptions,
-    };
-  },
-);
-vi.mock("@vercel/blob/client", () => ({
-  handleUpload: handleUploadMock,
+const putMock = vi.fn(async (pathname: string) => ({
+  url: `https://example-blob.vercel-storage.com/${pathname}`,
+}));
+vi.mock("@vercel/blob", () => ({
+  put: putMock,
 }));
 
 const { POST } = await import("./route");
 
-function buildRequest() {
+function buildRequest(file?: File) {
+  const formData = new FormData();
+  if (file) {
+    formData.append("file", file);
+  }
   return new Request("http://localhost/api/upload", {
     method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ type: "blob.generate-client-token" }),
+    body: formData,
   });
 }
 
 describe("POST /api/upload", () => {
   beforeEach(() => {
     authMock.mockReset();
-    handleUploadMock.mockClear();
+    putMock.mockClear();
   });
 
   it("returns 400 when there is no session", async () => {
     authMock.mockResolvedValue(null);
+
+    const file = new File(["fake"], "test.png", { type: "image/png" });
+    const response = await POST(buildRequest(file));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBeTruthy();
+    expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 when there is no file", async () => {
+    authMock.mockResolvedValue({
+      user: { id: "user-1", organizerId: "org-1", role: "ORGANIZER_ADMIN" },
+    });
 
     const response = await POST(buildRequest());
     const body = await response.json();
@@ -51,20 +55,35 @@ describe("POST /api/upload", () => {
     expect(body.error).toBeTruthy();
   });
 
-  it("authorizes the upload with content-type and size restrictions when there is a session", async () => {
+  it("returns 400 when the content type is not allowed", async () => {
     authMock.mockResolvedValue({
       user: { id: "user-1", organizerId: "org-1", role: "ORGANIZER_ADMIN" },
     });
 
-    const response = await POST(buildRequest());
+    const file = new File(["fake"], "test.gif", { type: "image/gif" });
+    const response = await POST(buildRequest(file));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBeTruthy();
+    expect(putMock).not.toHaveBeenCalled();
+  });
+
+  it("uploads the file and returns its url when there is a session", async () => {
+    authMock.mockResolvedValue({
+      user: { id: "user-1", organizerId: "org-1", role: "ORGANIZER_ADMIN" },
+    });
+
+    const file = new File(["fake"], "test.png", { type: "image/png" });
+    const response = await POST(buildRequest(file));
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body.allowedContentTypes).toEqual([
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-    ]);
-    expect(body.maximumSizeInBytes).toBe(5 * 1024 * 1024);
+    expect(body.url).toBe("https://example-blob.vercel-storage.com/test.png");
+    expect(putMock).toHaveBeenCalledWith(
+      "test.png",
+      file,
+      expect.objectContaining({ access: "public", contentType: "image/png" }),
+    );
   });
 });

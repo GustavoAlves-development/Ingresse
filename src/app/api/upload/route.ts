@@ -1,36 +1,38 @@
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
+const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE_BYTES = 4 * 1024 * 1024;
+
 export async function POST(request: Request): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody;
+  const session = await auth();
+  if (!session?.user?.organizerId) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 400 });
+  }
+
+  const formData = await request.formData();
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "missing file" }, { status: 400 });
+  }
+  if (!ALLOWED_CONTENT_TYPES.includes(file.type)) {
+    return NextResponse.json(
+      { error: "unsupported content type" },
+      { status: 400 },
+    );
+  }
+  if (file.size > MAX_SIZE_BYTES) {
+    return NextResponse.json({ error: "file too large" }, { status: 400 });
+  }
 
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async () => {
-        const session = await auth();
-        if (!session?.user?.organizerId) {
-          throw new Error("unauthorized");
-        }
-
-        return {
-          allowedContentTypes: ["image/jpeg", "image/png", "image/webp"],
-          maximumSizeInBytes: 5 * 1024 * 1024,
-          addRandomSuffix: true,
-        };
-      },
-      onUploadCompleted: async () => {
-        // Sem ação: a URL retornada pelo upload() no cliente já é escrita
-        // diretamente no formulário (evento/atração) que a envia — não há
-        // nada a persistir aqui. onUploadCompleted também não roda em
-        // localhost (precisa de uma callback URL pública), mas isso é OK:
-        // não dependemos dele para nada.
-      },
+    const blob = await put(file.name, file, {
+      access: "public",
+      addRandomSuffix: true,
+      contentType: file.type,
     });
-
-    return NextResponse.json(jsonResponse);
+    return NextResponse.json({ url: blob.url });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error).message },

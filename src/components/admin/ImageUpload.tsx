@@ -1,6 +1,5 @@
 "use client";
 
-import { upload } from "@vercel/blob/client";
 import { useState } from "react";
 
 export function ImageUpload({
@@ -25,12 +24,20 @@ export function ImageUpload({
 
     setStatus("uploading");
     try {
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
       });
-      setUrl(blob.url);
-      onChange?.(blob.url);
+      if (!response.ok) {
+        throw new Error("upload failed");
+      }
+      const { url: uploadedUrl } = (await response.json()) as {
+        url: string;
+      };
+      setUrl(uploadedUrl);
+      onChange?.(uploadedUrl);
       setStatus("idle");
     } catch {
       setStatus("error");
