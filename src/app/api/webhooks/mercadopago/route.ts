@@ -103,7 +103,7 @@ export async function POST(request: Request) {
   console.log("[webhook mercadopago] pedido processado", {
     orderId,
     alreadyProcessed: result.alreadyProcessed,
-    ticketCount: result.tickets.length,
+    ticketCount: result.alreadyProcessed ? null : result.tickets.length,
   });
 
   if (!result.alreadyProcessed) {
