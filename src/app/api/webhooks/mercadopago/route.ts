@@ -145,6 +145,18 @@ async function handleWebhook({
   const result = await markOrderAsPaidAndCreateTickets({
     orderId,
     mercadoPagoPaymentId: String(dataId),
+    // fee_details vem na resposta do próprio pagamento — é a taxa REAL
+    // cobrada pelo Mercado Pago nessa transação específica (varia por
+    // forma de pagamento: Pix, cartão à vista, parcelado...), não uma
+    // estimativa fixa. Somamos todas as entradas (normalmente só
+    // "mercadopago_fee", mas cobrimos o caso de mais de uma) e convertemos
+    // de reais pra centavos do mesmo jeito que o valor pago.
+    mercadoPagoFeeCents: Math.round(
+      (payment.fee_details ?? []).reduce(
+        (sum: number, fee: { amount?: number }) => sum + (fee.amount ?? 0),
+        0,
+      ) * 100,
+    ),
   });
 
   console.log("[webhook mercadopago] pedido processado", {

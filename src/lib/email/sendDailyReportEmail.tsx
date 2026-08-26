@@ -29,8 +29,10 @@ export async function sendDailyReportEmail(report: DailyReport) {
   // abrir, e não confundir com nenhum outro e-mail do sistema (que usam
   // o emoji 🎟️ e falam de "ingresso", não de "fechamento"/"lucro").
   const hasSales = report.organizers.length > 0;
+  const realProfitCents =
+    report.totals.platformFeeCents - report.totals.mercadoPagoFeeCents;
   const subject = hasSales
-    ? `💰🧾 FECHAMENTO DO DIA (${report.dateLabel}) — seu lucro: ${formatBRLFromCents(report.totals.platformFeeCents)}`
+    ? `💰🧾 FECHAMENTO DO DIA (${report.dateLabel}) — seu lucro líquido: ${formatBRLFromCents(realProfitCents)}`
     : `💰🧾 FECHAMENTO DO DIA (${report.dateLabel}) — sem vendas hoje`;
 
   const { error } = await resend.emails.send({

@@ -4,6 +4,7 @@ type PaidOrder = {
   organizerId: string;
   quantity: number;
   totalAmountCents: number;
+  mercadoPagoFeeCents: number | null;
   event: { name: string };
 };
 
@@ -19,6 +20,7 @@ export type OrganizerReportLine = {
   organizerEmail: string;
   grossCents: number;
   platformFeeCents: number;
+  mercadoPagoFeeCents: number;
   netCents: number;
   ticketsSold: number;
   events: { eventName: string; grossCents: number; quantity: number }[];
@@ -30,6 +32,7 @@ export type DailyReport = {
   totals: {
     grossCents: number;
     platformFeeCents: number;
+    mercadoPagoFeeCents: number;
     netCents: number;
     ticketsSold: number;
   };
@@ -56,12 +59,16 @@ export function buildDailyReport(
         organizerEmail: organizer?.email ?? "",
         grossCents: 0,
         platformFeeCents: 0,
+        mercadoPagoFeeCents: 0,
         netCents: 0,
         ticketsSold: 0,
         events: [],
       };
 
     line.grossCents += order.totalAmountCents;
+    // Pedidos de antes dessa coluna existir ficam null no banco — tratamos
+    // como 0 pra não quebrar a soma, em vez de virar NaN.
+    line.mercadoPagoFeeCents += order.mercadoPagoFeeCents ?? 0;
     line.ticketsSold += order.quantity;
 
     const existingEvent = line.events.find(
@@ -96,10 +103,17 @@ export function buildDailyReport(
     (acc, line) => ({
       grossCents: acc.grossCents + line.grossCents,
       platformFeeCents: acc.platformFeeCents + line.platformFeeCents,
+      mercadoPagoFeeCents: acc.mercadoPagoFeeCents + line.mercadoPagoFeeCents,
       netCents: acc.netCents + line.netCents,
       ticketsSold: acc.ticketsSold + line.ticketsSold,
     }),
-    { grossCents: 0, platformFeeCents: 0, netCents: 0, ticketsSold: 0 },
+    {
+      grossCents: 0,
+      platformFeeCents: 0,
+      mercadoPagoFeeCents: 0,
+      netCents: 0,
+      ticketsSold: 0,
+    },
   );
 
   return { dateLabel, organizers: organizerLines, totals };

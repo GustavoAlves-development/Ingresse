@@ -85,6 +85,7 @@ export async function listPaidOrdersInRange(start: Date, end: Date) {
 export async function markOrderAsPaidAndCreateTickets(params: {
   orderId: string;
   mercadoPagoPaymentId: string;
+  mercadoPagoFeeCents?: number;
 }) {
   return prisma.$transaction(async (tx) => {
     // UPDATE atômico condicional: só transiciona PENDING -> PAID. Se o
@@ -97,6 +98,7 @@ export async function markOrderAsPaidAndCreateTickets(params: {
         status: OrderStatus.PAID,
         paidAt: new Date(),
         mercadoPagoPaymentId: params.mercadoPagoPaymentId,
+        mercadoPagoFeeCents: params.mercadoPagoFeeCents,
       },
     });
 

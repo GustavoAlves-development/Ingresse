@@ -167,7 +167,7 @@ export function DailyReportEmail({ report }: { report: DailyReport }) {
                           <table role="presentation" width="100%" cellPadding={0} cellSpacing={0}>
                             <tbody>
                               <tr>
-                                <td width="50%" style={{ verticalAlign: "top" }}>
+                                <td width="50%" style={{ verticalAlign: "top", paddingBottom: "16px" }}>
                                   <span
                                     style={{
                                       fontFamily: FONT_BODY,
@@ -175,7 +175,7 @@ export function DailyReportEmail({ report }: { report: DailyReport }) {
                                       color: COLORS.muted,
                                     }}
                                   >
-                                    Seu lucro (10%)
+                                    Sua comissão (10%)
                                   </span>
                                   <br />
                                   <span
@@ -187,6 +187,55 @@ export function DailyReportEmail({ report }: { report: DailyReport }) {
                                     }}
                                   >
                                     {formatBRL(report.totals.platformFeeCents)}
+                                  </span>
+                                </td>
+                                <td width="50%" style={{ verticalAlign: "top", paddingBottom: "16px" }}>
+                                  <span
+                                    style={{
+                                      fontFamily: FONT_BODY,
+                                      fontSize: "12px",
+                                      color: COLORS.muted,
+                                    }}
+                                  >
+                                    Foi pro Mercado Pago
+                                  </span>
+                                  <br />
+                                  <span
+                                    style={{
+                                      fontFamily: FONT_HEADING,
+                                      fontSize: "20px",
+                                      fontWeight: 700,
+                                      color: COLORS.foreground,
+                                    }}
+                                  >
+                                    −{formatBRL(report.totals.mercadoPagoFeeCents)}
+                                  </span>
+                                </td>
+                              </tr>
+                              <tr>
+                                <td width="50%" style={{ verticalAlign: "top" }}>
+                                  <span
+                                    style={{
+                                      fontFamily: FONT_BODY,
+                                      fontSize: "12px",
+                                      color: COLORS.muted,
+                                    }}
+                                  >
+                                    Seu lucro líquido real
+                                  </span>
+                                  <br />
+                                  <span
+                                    style={{
+                                      fontFamily: FONT_HEADING,
+                                      fontSize: "20px",
+                                      fontWeight: 700,
+                                      color: COLORS.success,
+                                    }}
+                                  >
+                                    {formatBRL(
+                                      report.totals.platformFeeCents -
+                                        report.totals.mercadoPagoFeeCents,
+                                    )}
                                   </span>
                                 </td>
                                 <td width="50%" style={{ verticalAlign: "top" }}>
@@ -205,7 +254,7 @@ export function DailyReportEmail({ report }: { report: DailyReport }) {
                                       fontFamily: FONT_HEADING,
                                       fontSize: "20px",
                                       fontWeight: 700,
-                                      color: COLORS.success,
+                                      color: COLORS.foreground,
                                     }}
                                   >
                                     {formatBRL(report.totals.netCents)}

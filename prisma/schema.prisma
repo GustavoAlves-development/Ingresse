@@ -86,6 +86,7 @@ model Order {
   status                  OrderStatus @default(PENDING)
   mercadoPagoPaymentId    String?     @unique
   mercadoPagoPreferenceId String?
+  mercadoPagoFeeCents     Int?
   paidAt                  DateTime?
   createdAt               DateTime    @default(now())
 
