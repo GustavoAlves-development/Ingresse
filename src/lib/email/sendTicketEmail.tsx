@@ -18,7 +18,7 @@ export async function sendTicketEmail(params: {
   eventName: string;
   eventLocation: string;
   eventStartsAt: Date;
-  qrCodeDataUrl: string;
+  qrCodeUrl: string;
   ticketId: string;
 }) {
   const resend = getResendClient();
@@ -39,7 +39,7 @@ export async function sendTicketEmail(params: {
         eventName={params.eventName}
         eventLocation={params.eventLocation}
         eventStartsAt={params.eventStartsAt}
-        qrCodeDataUrl={params.qrCodeDataUrl}
+        qrCodeUrl={params.qrCodeUrl}
         ticketCode={ticketCode}
       />
     ),

@@ -3,7 +3,7 @@ type TicketEmailProps = {
   eventName: string;
   eventLocation: string;
   eventStartsAt: Date;
-  qrCodeDataUrl: string;
+  qrCodeUrl: string;
   ticketCode: string;
 };
 
@@ -31,7 +31,7 @@ export function TicketEmail({
   eventName,
   eventLocation,
   eventStartsAt,
-  qrCodeDataUrl,
+  qrCodeUrl,
   ticketCode,
 }: TicketEmailProps) {
   const formattedDate = eventStartsAt.toLocaleString("pt-BR", {
@@ -209,7 +209,7 @@ export function TicketEmail({
                               }}
                             >
                               <img
-                                src={qrCodeDataUrl}
+                                src={qrCodeUrl}
                                 alt={`QR Code do ingresso - código ${ticketCode}`}
                                 width={200}
                                 height={200}

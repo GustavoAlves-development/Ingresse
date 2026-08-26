@@ -5,7 +5,7 @@ import { findOrderById, markOrderAsPaidAndCreateTickets } from "@/lib/db/orderRe
 import { sendTicketEmail } from "@/lib/email/sendTicketEmail";
 import { fetchPayment } from "@/lib/payments/mercadoPago";
 import { verifyMercadoPagoSignature } from "@/lib/payments/verifyWebhookSignature";
-import { generateQrCodeDataUrl } from "@/lib/tickets/qrCode";
+import { generateQrCodeUrl } from "@/lib/tickets/qrCode";
 
 export async function POST(request: Request) {
   const xSignature = request.headers.get("x-signature") ?? "";
@@ -172,14 +172,14 @@ async function handleWebhook({
     } else {
       for (const ticket of result.tickets) {
         try {
-          const qrCodeDataUrl = await generateQrCodeDataUrl(ticket.qrToken);
+          const qrCodeUrl = await generateQrCodeUrl(ticket.qrToken);
           await sendTicketEmail({
             buyerEmail: result.order.buyerEmail,
             buyerName: ticket.buyerName,
             eventName: event.name,
             eventLocation: event.location,
             eventStartsAt: event.startsAt,
-            qrCodeDataUrl,
+            qrCodeUrl,
             ticketId: ticket.id,
           });
           console.log("[webhook mercadopago] e-mail do ticket enviado", {

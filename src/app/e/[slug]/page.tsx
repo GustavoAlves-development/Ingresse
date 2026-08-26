@@ -26,16 +26,23 @@ export default async function PublicEventPage({
       {status === "success" && (
         <Alert className="border-success/30 bg-success/10">
           <AlertDescription className="text-success">
-            Pagamento em processamento! Você receberá o ingresso por e-mail
-            assim que for confirmado.
+            <strong>Obrigado pela compra! 🎉</strong>
+            <br />
+            Seu pagamento foi recebido. Assim que for confirmado, seu
+            ingresso (com QR Code) chega no e-mail que você informou —
+            fica de olho na caixa de entrada (e no spam, por garantia).
           </AlertDescription>
         </Alert>
       )}
       {status === "pending" && (
         <Alert className="border-success/30 bg-success/10">
           <AlertDescription className="text-success">
-            Pagamento em análise. Você receberá o ingresso por e-mail assim
-            que for aprovado.
+            <strong>Obrigado pela compra! 🎉</strong>
+            <br />
+            Seu pagamento está em análise. Assim que for aprovado, seu
+            ingresso (com QR Code) chega automaticamente no e-mail que você
+            informou — fica de olho na caixa de entrada (e no spam, por
+            garantia).
           </AlertDescription>
         </Alert>
       )}
