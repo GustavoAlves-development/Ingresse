@@ -170,43 +170,55 @@ async function handleWebhook({
         eventId: result.order.eventId,
       });
     } else {
-      for (const ticket of result.tickets) {
-        try {
-          const qrCodeUrl = await generateQrCodeUrl(ticket.qrToken);
-          await sendTicketEmail({
-            buyerEmail: result.order.buyerEmail,
-            buyerName: ticket.buyerName,
-            eventName: event.name,
-            eventLocation: event.location,
-            eventStartsAt: event.startsAt,
-            qrCodeUrl,
-            ticketId: ticket.id,
-          });
-          console.log("[webhook mercadopago] e-mail do ticket enviado", {
-            ticketId: ticket.id,
-            buyerEmail: result.order.buyerEmail,
-          });
-          await debugLog("e-mail do ticket enviado", {
-            ticketId: ticket.id,
-            buyerEmail: result.order.buyerEmail,
-          });
-        } catch (err) {
-          // Não deixamos o envio de e-mail falho derrubar o webhook inteiro
-          // (isso faria o Mercado Pago re-tentar e recriar tickets
-          // duplicados via retry). O erro fica registrado no log pra
-          // investigação, e o ticket já criado continua válido mesmo sem
-          // o e-mail ter saído.
-          console.error("[webhook mercadopago] falha ao enviar e-mail do ticket", {
-            ticketId: ticket.id,
-            buyerEmail: result.order.buyerEmail,
-            error: err instanceof Error ? err.message : String(err),
-          });
-          await debugLog("falha ao enviar e-mail do ticket", {
-            ticketId: ticket.id,
-            buyerEmail: result.order.buyerEmail,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        }
+      try {
+        // Gera os QR codes de todos os tickets do pedido em paralelo e manda
+        // um único e-mail pra todos — evita gastar uma chamada do Resend
+        // por ingresso quando o comprador leva mais de uma unidade.
+        const ticketsWithQr = await Promise.all(
+          result.tickets.map(
+            async (ticket: { id: string; qrToken: string; buyerName: string }) => ({
+              ticketId: ticket.id,
+              buyerName: ticket.buyerName,
+              qrCodeUrl: await generateQrCodeUrl(ticket.qrToken),
+            }),
+          ),
+        );
+
+        await sendTicketEmail({
+          buyerEmail: result.order.buyerEmail,
+          buyerName: result.order.buyerName,
+          eventName: event.name,
+          eventLocation: event.location,
+          eventStartsAt: event.startsAt,
+          tickets: ticketsWithQr,
+        });
+
+        console.log("[webhook mercadopago] e-mail dos ingressos enviado", {
+          orderId,
+          ticketCount: result.tickets.length,
+          buyerEmail: result.order.buyerEmail,
+        });
+        await debugLog("e-mail dos ingressos enviado", {
+          orderId,
+          ticketCount: result.tickets.length,
+          buyerEmail: result.order.buyerEmail,
+        });
+      } catch (err) {
+        // Não deixamos o envio de e-mail falho derrubar o webhook inteiro
+        // (isso faria o Mercado Pago re-tentar e recriar tickets
+        // duplicados via retry). O erro fica registrado no log pra
+        // investigação, e os tickets já criados continuam válidos mesmo
+        // sem o e-mail ter saído.
+        console.error("[webhook mercadopago] falha ao enviar e-mail dos ingressos", {
+          orderId,
+          buyerEmail: result.order.buyerEmail,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        await debugLog("falha ao enviar e-mail dos ingressos", {
+          orderId,
+          buyerEmail: result.order.buyerEmail,
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
     }
   }

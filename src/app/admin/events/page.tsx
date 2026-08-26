@@ -30,8 +30,8 @@ export default async function EventsListPage() {
   const appUrl = getAppUrl();
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <div className="mb-6 flex items-center justify-between">
+    <main className="mx-auto max-w-3xl p-4 sm:p-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-heading text-xl font-semibold">Meus eventos</h1>
         <Button render={<Link href="/admin/events/new" />} nativeButton={false}>
           Novo evento
@@ -47,14 +47,14 @@ export default async function EventsListPage() {
             return (
               <Card key={event.id}>
                 <CardContent className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="font-medium">{event.name}</p>
                       <p className="text-sm text-muted-foreground">
                         {event.location}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                       <Badge
                         variant="outline"
                         className={STATUS_CLASSES[event.status]}
@@ -76,8 +76,8 @@ export default async function EventsListPage() {
                     </div>
                   </div>
                   {event.status === "PUBLISHED" && (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
-                      <span className="truncate font-mono text-xs text-muted-foreground">
+                    <div className="flex flex-col items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                      <span className="max-w-full truncate font-mono text-xs text-muted-foreground">
                         {publicUrl}
                       </span>
                       <CopyLinkButton url={publicUrl} />

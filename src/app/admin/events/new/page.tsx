@@ -73,7 +73,7 @@ export default async function NewEventPage({
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-md p-8">
+    <main className="mx-auto max-w-md p-4 sm:p-8">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Novo evento</CardTitle>

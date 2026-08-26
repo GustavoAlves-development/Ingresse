@@ -143,7 +143,7 @@ export default async function EditEventPage({
   const boundAddAttractionAction = addAttractionAction.bind(null, eventId);
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-8">
+    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-8">
       <div className="flex items-center justify-end">
         <Button
           render={<Link href={`/admin/events/${eventId}/dashboard`} />}

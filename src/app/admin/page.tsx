@@ -10,7 +10,7 @@ import {
 
 export default function AdminHomePage() {
   return (
-    <main className="mx-auto max-w-3xl p-8">
+    <main className="mx-auto max-w-3xl p-4 sm:p-8">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl">Painel do organizador</CardTitle>

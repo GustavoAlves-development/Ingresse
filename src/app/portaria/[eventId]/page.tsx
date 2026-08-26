@@ -20,7 +20,7 @@ export default async function PortariaScannerPage({
   }
 
   return (
-    <main className="mx-auto max-w-md p-8">
+    <main className="mx-auto max-w-md p-4 sm:p-8">
       <h1 className="mb-6 font-heading text-xl font-semibold">
         {event.name}
       </h1>

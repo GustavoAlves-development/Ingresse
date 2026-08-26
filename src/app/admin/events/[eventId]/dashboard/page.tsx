@@ -78,8 +78,8 @@ export default async function EventSalesDashboardPage({
   const remainingCapacity = Math.max(capacity - ticketsSold, 0);
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-8">
-      <div className="flex items-center justify-between">
+    <main className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">
             <Link href="/admin/events" className="hover:text-foreground">

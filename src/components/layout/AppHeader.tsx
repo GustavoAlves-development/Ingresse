@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { MobileNavMenu } from "@/components/layout/MobileNavMenu";
 
 const ROLE_LABELS: Record<string, string> = {
   ORGANIZER_ADMIN: "Organizador",
@@ -15,9 +16,32 @@ async function signOutAction() {
 export async function AppHeader() {
   const session = await auth();
 
+  const navLinks =
+    session?.user?.role === "ORGANIZER_ADMIN"
+      ? [
+          { href: "/admin/events", label: "Meus eventos" },
+          { href: "/admin/team", label: "Equipe" },
+          { href: "/portaria", label: "Portaria" },
+        ]
+      : session?.user
+        ? [{ href: "/portaria", label: "Portaria" }]
+        : [];
+
+  const userLabel = session?.user
+    ? `${session.user.name} · ${ROLE_LABELS[session.user.role] ?? session.user.role}`
+    : "";
+
+  const signOutButton = (
+    <form action={signOutAction}>
+      <Button type="submit" variant="secondary" size="sm">
+        Sair
+      </Button>
+    </form>
+  );
+
   return (
-    <header className="border-b border-border bg-secondary">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
+    <header className="relative border-b border-border bg-secondary">
+      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
         <Link
           href="/"
           className="brand-glow font-heading text-lg font-semibold tracking-tight text-foreground"
@@ -25,46 +49,38 @@ export async function AppHeader() {
           ingresse
         </Link>
         {session?.user && (
-          <div className="flex items-center gap-6">
-            <nav className="flex items-center gap-4 text-sm">
-              {session.user.role === "ORGANIZER_ADMIN" && (
-                <>
+          <>
+            {/* Nav completa — some abaixo de sm e vira o menu hambúrguer */}
+            <div className="hidden items-center gap-6 sm:flex">
+              <nav className="flex items-center gap-4 text-sm">
+                {navLinks.map((link) => (
                   <Link
-                    href="/admin/events"
+                    key={link.href}
+                    href={link.href}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    Meus eventos
+                    {link.label}
                   </Link>
-                  <Link
-                    href="/admin/team"
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Equipe
-                  </Link>
-                </>
-              )}
-              <Link
-                href="/portaria"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Portaria
-              </Link>
-            </nav>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                {session.user.name}
-                <span className="text-muted-foreground/70">
-                  {" "}
-                  · {ROLE_LABELS[session.user.role] ?? session.user.role}
+                ))}
+              </nav>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">
+                  {session.user.name}
+                  <span className="text-muted-foreground/70">
+                    {" "}
+                    · {ROLE_LABELS[session.user.role] ?? session.user.role}
+                  </span>
                 </span>
-              </span>
-              <form action={signOutAction}>
-                <Button type="submit" variant="secondary" size="sm">
-                  Sair
-                </Button>
-              </form>
+                {signOutButton}
+              </div>
             </div>
-          </div>
+
+            <MobileNavMenu
+              navLinks={navLinks}
+              userLabel={userLabel}
+              signOutSlot={signOutButton}
+            />
+          </>
         )}
       </div>
     </header>

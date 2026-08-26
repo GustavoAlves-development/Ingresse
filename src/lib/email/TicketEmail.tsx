@@ -1,10 +1,15 @@
+type TicketData = {
+  qrCodeUrl: string;
+  ticketCode: string;
+  buyerName: string;
+};
+
 type TicketEmailProps = {
   buyerName: string;
   eventName: string;
   eventLocation: string;
   eventStartsAt: Date;
-  qrCodeUrl: string;
-  ticketCode: string;
+  tickets: TicketData[];
 };
 
 // Paleta e tipografia espelham o tema da plataforma (src/app/globals.css),
@@ -31,14 +36,15 @@ export function TicketEmail({
   eventName,
   eventLocation,
   eventStartsAt,
-  qrCodeUrl,
-  ticketCode,
+  tickets,
 }: TicketEmailProps) {
   const formattedDate = eventStartsAt.toLocaleString("pt-BR", {
     dateStyle: "long",
     timeStyle: "short",
     timeZone: "America/Sao_Paulo",
   });
+
+  const isPlural = tickets.length > 1;
 
   return (
     <div
@@ -74,7 +80,7 @@ export function TicketEmail({
             </td>
           </tr>
 
-          {/* Cartão do ingresso */}
+          {/* Cartão do(s) ingresso(s) */}
           <tr>
             <td
               style={{
@@ -116,7 +122,10 @@ export function TicketEmail({
                           color: COLORS.muted,
                         }}
                       >
-                        Olá, {buyerName}! Seu ingresso está confirmado.
+                        Olá, {buyerName}!{" "}
+                        {isPlural
+                          ? `Seus ${tickets.length} ingressos estão confirmados.`
+                          : "Seu ingresso está confirmado."}
                       </p>
                       <h1
                         style={{
@@ -169,101 +178,19 @@ export function TicketEmail({
                     </td>
                   </tr>
 
-                  {/* Picote / perfuração do ticket */}
-                  <tr>
-                    <td style={{ padding: "0 0" }}>
-                      <table role="presentation" width="100%" cellPadding={0} cellSpacing={0}>
-                        <tbody>
-                          <tr>
-                            <td
-                              style={{
-                                borderTop: `2px dashed ${COLORS.cardBorder}`,
-                                fontSize: 0,
-                                lineHeight: 0,
-                              }}
-                            >
-                              &nbsp;
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-
-                  {/* QR code */}
-                  <tr>
-                    <td style={{ padding: "24px 28px 8px", textAlign: "center" }}>
-                      <table
-                        role="presentation"
-                        cellPadding={0}
-                        cellSpacing={0}
-                        style={{ margin: "0 auto" }}
-                      >
-                        <tbody>
-                          <tr>
-                            <td
-                              style={{
-                                backgroundColor: "#ffffff",
-                                borderRadius: "12px",
-                                padding: "16px",
-                              }}
-                            >
-                              <img
-                                src={qrCodeUrl}
-                                alt={`QR Code do ingresso - código ${ticketCode}`}
-                                width={200}
-                                height={200}
-                                style={{ display: "block" }}
-                              />
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <p
-                        style={{
-                          margin: "16px 0 0",
-                          fontFamily: FONT_BODY,
-                          fontSize: "13px",
-                          color: COLORS.muted,
-                        }}
-                      >
-                        Apresente este QR Code na entrada do evento
-                      </p>
-                    </td>
-                  </tr>
-
-                  {/* Código alternativo, caso a imagem não carregue no cliente de e-mail */}
-                  <tr>
-                    <td style={{ padding: "8px 28px 28px", textAlign: "center" }}>
-                      <p
-                        style={{
-                          margin: "0 0 6px",
-                          fontFamily: FONT_BODY,
-                          fontSize: "11px",
-                          color: COLORS.muted,
-                        }}
-                      >
-                        Se a imagem não aparecer, informe este código na
-                        portaria:
-                      </p>
-                      <span
-                        style={{
-                          fontFamily: FONT_MONO,
-                          fontSize: "16px",
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          color: COLORS.foreground,
-                          backgroundColor: COLORS.background,
-                          border: `1px solid ${COLORS.cardBorder}`,
-                          borderRadius: "6px",
-                          padding: "6px 12px",
-                          display: "inline-block",
-                        }}
-                      >
-                        {ticketCode}
-                      </span>
-                    </td>
-                  </tr>
+                  {/* Um bloco de picote + QR + código por ingresso do pedido —
+                      pedidos com mais de uma unidade chegam num único e-mail
+                      em vez de um e-mail por ingresso, pra economizar cota do
+                      Resend e não lotar a caixa de entrada do comprador. */}
+                  {tickets.map((ticket, index) => (
+                    <TicketBlock
+                      key={ticket.ticketCode}
+                      ticket={ticket}
+                      index={index}
+                      total={tickets.length}
+                      purchaserName={buyerName}
+                    />
+                  ))}
                 </tbody>
               </table>
             </td>
@@ -280,13 +207,154 @@ export function TicketEmail({
                   color: COLORS.muted,
                 }}
               >
-                Guarde este e-mail — ele é o seu ingresso. Em caso de dúvidas,
-                entre em contato com a organização do evento.
+                Guarde este e-mail — {isPlural ? "eles são" : "ele é"} o seu
+                ingresso. Em caso de dúvidas, entre em contato com a
+                organização do evento.
               </p>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+  );
+}
+
+function TicketBlock({
+  ticket,
+  index,
+  total,
+  purchaserName,
+}: {
+  ticket: TicketData;
+  index: number;
+  total: number;
+  purchaserName: string;
+}) {
+  return (
+    <>
+      {/* Picote / perfuração do ticket */}
+      <tr>
+        <td style={{ padding: "0 0" }}>
+          <table role="presentation" width="100%" cellPadding={0} cellSpacing={0}>
+            <tbody>
+              <tr>
+                <td
+                  style={{
+                    borderTop: `2px dashed ${COLORS.cardBorder}`,
+                    fontSize: 0,
+                    lineHeight: 0,
+                  }}
+                >
+                  &nbsp;
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+
+      {/* Identificação do ingresso dentro do pedido (só quando há mais de
+          um) */}
+      {total > 1 && (
+        <tr>
+          <td style={{ padding: "20px 28px 0" }}>
+            <span
+              style={{
+                fontFamily: FONT_HEADING,
+                fontSize: "13px",
+                fontWeight: 700,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                color: COLORS.primary,
+              }}
+            >
+              Ingresso {index + 1} de {total}
+              {ticket.buyerName && ticket.buyerName !== purchaserName
+                ? ` · ${ticket.buyerName}`
+                : ""}
+            </span>
+          </td>
+        </tr>
+      )}
+
+      {/* QR code */}
+      <tr>
+        <td
+          style={{
+            padding: total > 1 ? "12px 28px 8px" : "24px 28px 8px",
+            textAlign: "center",
+          }}
+        >
+          <table
+            role="presentation"
+            cellPadding={0}
+            cellSpacing={0}
+            style={{ margin: "0 auto" }}
+          >
+            <tbody>
+              <tr>
+                <td
+                  style={{
+                    backgroundColor: "#ffffff",
+                    borderRadius: "12px",
+                    padding: "16px",
+                  }}
+                >
+                  <img
+                    src={ticket.qrCodeUrl}
+                    alt={`QR Code do ingresso - código ${ticket.ticketCode}`}
+                    width={200}
+                    height={200}
+                    style={{ display: "block" }}
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p
+            style={{
+              margin: "16px 0 0",
+              fontFamily: FONT_BODY,
+              fontSize: "13px",
+              color: COLORS.muted,
+            }}
+          >
+            Apresente este QR Code na entrada do evento
+          </p>
+        </td>
+      </tr>
+
+      {/* Código alternativo, caso a imagem não carregue no cliente de e-mail */}
+      <tr>
+        <td style={{ padding: "8px 28px 28px", textAlign: "center" }}>
+          <p
+            style={{
+              margin: "0 0 6px",
+              fontFamily: FONT_BODY,
+              fontSize: "11px",
+              color: COLORS.muted,
+            }}
+          >
+            Se a imagem não aparecer, informe este código na portaria:
+          </p>
+          <span
+            style={{
+              fontFamily: FONT_MONO,
+              fontSize: "16px",
+              fontWeight: 700,
+              letterSpacing: "0.1em",
+              color: COLORS.foreground,
+              backgroundColor: COLORS.background,
+              border: `1px solid ${COLORS.cardBorder}`,
+              borderRadius: "6px",
+              padding: "6px 12px",
+              display: "inline-block",
+            }}
+          >
+            {ticket.ticketCode}
+          </span>
+        </td>
+      </tr>
+    </>
   );
 }

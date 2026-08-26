@@ -26,7 +26,7 @@ export default async function PortariaEventsListPage() {
   const events = await listEventsByOrganizer(session.user.organizerId);
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
+    <main className="mx-auto max-w-3xl p-4 sm:p-8">
       <h1 className="mb-6 font-heading text-xl font-semibold">Portaria</h1>
       {events.length === 0 ? (
         <p className="text-muted-foreground">Nenhum evento criado ainda.</p>
@@ -38,14 +38,14 @@ export default async function PortariaEventsListPage() {
                 href={`/portaria/${event.id}`}
                 className="block focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
               >
-                <CardContent className="flex items-center justify-between">
+                <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">{event.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {event.location}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <Badge
                       variant="outline"
                       className={STATUS_CLASSES[event.status]}
