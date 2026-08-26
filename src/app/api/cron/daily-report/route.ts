@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { buildDailyReport } from "@/lib/billing/dailyReport";
+import { buildDailyReport, type OrganizerReportLine } from "@/lib/billing/dailyReport";
 import { debugLog } from "@/lib/debug/debugLog";
 import { listOrganizersByIds } from "@/lib/db/organizerRepository";
 import { listPaidOrdersInRange } from "@/lib/db/orderRepository";
 import { sendDailyReportEmail } from "@/lib/email/sendDailyReportEmail";
+import { sendOrganizerDailyReportEmail } from "@/lib/email/sendOrganizerDailyReportEmail";
 import {
   formatSaoPauloDateLabel,
   getSaoPauloDayRangeUntilNow,
@@ -50,6 +51,45 @@ export async function GET(request: Request) {
       organizerCount: report.organizers.length,
       totalGrossCents: report.totals.grossCents,
       totalProfitCents: report.totals.platformFeeCents,
+    });
+
+    // Um e-mail simples por organizador que vendeu algo hoje — só o
+    // quanto ele ganhou (netCents) e quantos ingressos vendeu, nunca a
+    // taxa da plataforma. Isolado por organizador: se o e-mail de um
+    // falhar (ex: endereço inválido), não impede o envio dos outros nem
+    // derruba o relatório interno, que já foi enviado com sucesso acima.
+    const organizerEmailResults = await Promise.allSettled(
+      report.organizers.map((line: OrganizerReportLine) =>
+        sendOrganizerDailyReportEmail(line, dateLabel),
+      ),
+    );
+
+    organizerEmailResults.forEach((result, index) => {
+      const line = report.organizers[index];
+      if (result.status === "fulfilled") {
+        console.log("[cron daily-report] resumo enviado ao organizador", {
+          organizerId: line.organizerId,
+          organizerEmail: line.organizerEmail,
+        });
+      } else {
+        console.error(
+          "[cron daily-report] falha ao enviar resumo ao organizador",
+          {
+            organizerId: line.organizerId,
+            organizerEmail: line.organizerEmail,
+            error:
+              result.reason instanceof Error
+                ? result.reason.message
+                : String(result.reason),
+          },
+        );
+      }
+    });
+    await debugLog("resumos dos organizadores processados", {
+      dateLabel,
+      total: organizerEmailResults.length,
+      falhas: organizerEmailResults.filter((r) => r.status === "rejected")
+        .length,
     });
 
     return NextResponse.json({
