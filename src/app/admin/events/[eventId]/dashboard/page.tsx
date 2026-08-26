@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { findEventForOrganizer } from "@/lib/db/eventRepository";
 import { listOrdersForEvent } from "@/lib/db/orderRepository";
+import { splitRevenue } from "@/lib/billing/platformFee";
 import { formatBRLFromCents } from "@/lib/format/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,7 @@ export default async function EventSalesDashboardPage({
     (sum: number, order: OrderWithTickets) => sum + order.totalAmountCents,
     0,
   );
+  const revenue = splitRevenue(totalRevenueCents);
 
   const allTickets = orders.flatMap((order: OrderWithTickets) => order.tickets);
   const ticketsSold = allTickets.filter(
@@ -106,10 +108,14 @@ export default async function EventSalesDashboardPage({
         <Card size="sm">
           <CardContent className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">
-              Receita (pedidos pagos)
+              Você recebe (líquido)
             </span>
             <span className="font-heading text-lg font-semibold text-success">
-              {formatBRLFromCents(totalRevenueCents)}
+              {formatBRLFromCents(revenue.netCents)}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Bruto {formatBRLFromCents(revenue.grossCents)} · taxa da
+              plataforma (10%) −{formatBRLFromCents(revenue.platformFeeCents)}
             </span>
           </CardContent>
         </Card>

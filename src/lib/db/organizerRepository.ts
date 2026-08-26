@@ -14,6 +14,16 @@ export async function findOrganizerById(organizerId: string) {
   return prisma.organizer.findUnique({ where: { id: organizerId } });
 }
 
+// Usado pelo relatório diário: os pedidos trazem só organizerId, então
+// depois de agrupar as vendas por organizador buscamos nome/e-mail de
+// todos de uma vez, em vez de uma query por organizador.
+export async function listOrganizersByIds(organizerIds: string[]) {
+  if (organizerIds.length === 0) return [];
+  return prisma.organizer.findMany({
+    where: { id: { in: organizerIds } },
+  });
+}
+
 export async function createOrganizerWithAdminUser(input: {
   organizerName: string;
   organizerEmail: string;

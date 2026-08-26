@@ -66,6 +66,22 @@ export async function listOrdersForEvent(organizerId: string, eventId: string) {
   });
 }
 
+// Usado pelo relatório diário de fechamento (cron às 22h) — cobre TODOS os
+// organizadores da plataforma, não só um; o relatório é interno, pro dono
+// do software, não pro organizador.
+export async function listPaidOrdersInRange(start: Date, end: Date) {
+  return prisma.order.findMany({
+    where: {
+      status: OrderStatus.PAID,
+      paidAt: { gte: start, lt: end },
+    },
+    include: {
+      event: { select: { name: true } },
+    },
+    orderBy: { paidAt: "asc" },
+  });
+}
+
 export async function markOrderAsPaidAndCreateTickets(params: {
   orderId: string;
   mercadoPagoPaymentId: string;
