@@ -51,6 +51,21 @@ export async function findOrderById(orderId: string) {
   return prisma.order.findUnique({ where: { id: orderId } });
 }
 
+// Usado pelo dashboard de vendas do organizador — tenant-scoped pelo mesmo
+// padrão de findEventForOrganizer (organizerId + eventId juntos na query).
+// Inclui os tickets de cada pedido pra dar pro dashboard, numa única
+// consulta, tanto o status de pagamento quanto quantos ingressos já foram
+// usados na portaria.
+export async function listOrdersForEvent(organizerId: string, eventId: string) {
+  return prisma.order.findMany({
+    where: { organizerId, eventId },
+    orderBy: { createdAt: "desc" },
+    include: {
+      tickets: { select: { id: true, status: true } },
+    },
+  });
+}
+
 export async function markOrderAsPaidAndCreateTickets(params: {
   orderId: string;
   mercadoPagoPaymentId: string;

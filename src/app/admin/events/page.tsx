@@ -62,6 +62,12 @@ export default async function EventsListPage() {
                         {STATUS_LABELS[event.status] ?? event.status}
                       </Badge>
                       <Link
+                        href={`/admin/events/${event.id}/dashboard`}
+                        className="text-sm text-primary underline underline-offset-4"
+                      >
+                        Vendas
+                      </Link>
+                      <Link
                         href={`/admin/events/${event.id}/edit`}
                         className="text-sm text-primary underline underline-offset-4"
                       >

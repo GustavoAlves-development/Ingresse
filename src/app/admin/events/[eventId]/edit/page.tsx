@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
@@ -143,6 +144,15 @@ export default async function EditEventPage({
 
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 p-8">
+      <div className="flex items-center justify-end">
+        <Button
+          render={<Link href={`/admin/events/${eventId}/dashboard`} />}
+          nativeButton={false}
+          variant="outline"
+        >
+          Ver vendas
+        </Button>
+      </div>
       <EventEditFormWithPreview
         event={event}
         error={error}
