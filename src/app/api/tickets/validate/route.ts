@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
-import { validateTicketForOrganizer } from "@/lib/db/ticketRepository";
+import { getPlatformOwnerSession } from "@/lib/auth/platformOwner";
+import {
+  validateTicketAsPlatformOwner,
+  validateTicketForOrganizer,
+} from "@/lib/db/ticketRepository";
 
 const validateSchema = z.object({
   qrToken: z.string().trim().min(1),
@@ -19,11 +23,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid input" }, { status: 400 });
   }
 
-  const { result, ticket } = await validateTicketForOrganizer(
-    session.user.organizerId,
-    parsed.data.qrToken,
-    session.user.id,
-  );
+  // Dono da plataforma consegue validar ingresso de portaria de qualquer
+  // organizador (não só o seu). Pra qualquer outro usuário, continua
+  // isolado pelo organizerId da própria sessão, como sempre.
+  const platformOwnerSession = await getPlatformOwnerSession();
+  const { result, ticket } = platformOwnerSession
+    ? await validateTicketAsPlatformOwner(parsed.data.qrToken, session.user.id)
+    : await validateTicketForOrganizer(
+        session.user.organizerId,
+        parsed.data.qrToken,
+        session.user.id,
+      );
 
   return NextResponse.json({ result, buyerName: ticket?.buyerName ?? null });
 }

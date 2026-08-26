@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { findEventForOrganizer } from "@/lib/db/eventRepository";
+import { getPlatformOwnerSession } from "@/lib/auth/platformOwner";
+import { findEventById, findEventForOrganizer } from "@/lib/db/eventRepository";
 import { QrScanner } from "@/components/portaria/QrScanner";
 
 export default async function PortariaScannerPage({
@@ -14,7 +15,18 @@ export default async function PortariaScannerPage({
   }
 
   const { eventId } = await params;
-  const event = await findEventForOrganizer(session.user.organizerId, eventId);
+  let event = await findEventForOrganizer(session.user.organizerId, eventId);
+
+  // Não achou dentro do próprio organizador — só o dono da plataforma
+  // consegue enxergar (e escanear) portaria de evento de outro
+  // organizador. Pra qualquer outra sessão, continua 404 normalmente.
+  if (!event) {
+    const platformOwnerSession = await getPlatformOwnerSession();
+    if (platformOwnerSession) {
+      event = await findEventById(eventId);
+    }
+  }
+
   if (!event) {
     notFound();
   }

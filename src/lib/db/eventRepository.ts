@@ -84,3 +84,45 @@ export async function findEventBySlug(slug: string) {
     include: { attractions: { orderBy: { createdAt: "asc" } } },
   });
 }
+
+export type PlatformEventFilters = {
+  organizerId?: string;
+  status?: EventStatus;
+  search?: string;
+  startsAtFrom?: Date;
+  startsAtTo?: Date;
+};
+
+// Sem escopo de tenant de propósito — traz eventos de TODOS os
+// organizadores. Só usado pelo dashboard de plataforma
+// (/admin/platform), já protegido por getPlatformOwnerSession antes de
+// qualquer chamada chegar aqui. Inclui os pedidos pagos de cada evento
+// pra computar receita/comissão sem uma query extra por evento.
+export async function listAllEventsForPlatform(filters: PlatformEventFilters) {
+  return prisma.event.findMany({
+    where: {
+      ...(filters.organizerId ? { organizerId: filters.organizerId } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.search
+        ? { name: { contains: filters.search, mode: "insensitive" } }
+        : {}),
+      ...(filters.startsAtFrom || filters.startsAtTo
+        ? {
+            startsAt: {
+              ...(filters.startsAtFrom ? { gte: filters.startsAtFrom } : {}),
+              ...(filters.startsAtTo ? { lte: filters.startsAtTo } : {}),
+            },
+          }
+        : {}),
+    },
+    include: {
+      organizer: { select: { id: true, name: true } },
+      orders: {
+        where: { status: "PAID" },
+        select: { totalAmountCents: true, quantity: true },
+      },
+      _count: { select: { tickets: { where: { status: { not: "CANCELLED" } } } } },
+    },
+    orderBy: { startsAt: "desc" },
+  });
+}

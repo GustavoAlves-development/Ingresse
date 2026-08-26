@@ -14,6 +14,13 @@ export async function findOrganizerById(organizerId: string) {
   return prisma.organizer.findUnique({ where: { id: organizerId } });
 }
 
+// Sem escopo de tenant de propósito — só usado pelo dashboard de
+// plataforma (/admin/platform), já protegido por getPlatformOwnerSession
+// antes de qualquer chamada chegar aqui.
+export async function listAllOrganizers() {
+  return prisma.organizer.findMany({ orderBy: { name: "asc" } });
+}
+
 // Usado pelo relatório diário: os pedidos trazem só organizerId, então
 // depois de agrupar as vendas por organizador buscamos nome/e-mail de
 // todos de uma vez, em vez de uma query por organizador.

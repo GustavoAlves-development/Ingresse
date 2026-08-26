@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
+import { getPlatformOwnerSession } from "@/lib/auth/platformOwner";
 import { Button } from "@/components/ui/button";
 import { MobileNavMenu } from "@/components/layout/MobileNavMenu";
 
@@ -15,6 +16,7 @@ async function signOutAction() {
 
 export async function AppHeader() {
   const session = await auth();
+  const isPlatformOwner = Boolean(await getPlatformOwnerSession());
 
   const navLinks =
     session?.user?.role === "ORGANIZER_ADMIN"
@@ -26,6 +28,10 @@ export async function AppHeader() {
       : session?.user
         ? [{ href: "/portaria", label: "Portaria" }]
         : [];
+
+  if (isPlatformOwner) {
+    navLinks.unshift({ href: "/admin/platform", label: "Plataforma" });
+  }
 
   const userLabel = session?.user
     ? `${session.user.name} · ${ROLE_LABELS[session.user.role] ?? session.user.role}`
