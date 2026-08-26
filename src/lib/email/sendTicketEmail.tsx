@@ -30,7 +30,7 @@ export async function sendTicketEmail(params: {
   const ticketCode = params.ticketId.slice(0, 8).toUpperCase();
 
   const { error } = await resend.emails.send({
-    from: "Plataforma de Ingressos <ingressos@resend.dev>",
+    from: "Plataforma de Ingressos <ingressos@ingressebr.site>",
     to: params.buyerEmail,
     subject: `Seu ingresso para ${params.eventName}`,
     react: (
