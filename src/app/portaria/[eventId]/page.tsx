@@ -15,11 +15,18 @@ export default async function PortariaScannerPage({
   }
 
   const { eventId } = await params;
-  let event = await findEventForOrganizer(session.user.organizerId, eventId);
+  const tenantEvent = await findEventForOrganizer(
+    session.user.organizerId,
+    eventId,
+  );
 
   // Não achou dentro do próprio organizador — só o dono da plataforma
   // consegue enxergar (e escanear) portaria de evento de outro
   // organizador. Pra qualquer outra sessão, continua 404 normalmente.
+  // Tipado só pelo formato que a página realmente usa (name) porque
+  // findEventForOrganizer inclui attractions e findEventById não —
+  // unificar os dois tipos completos não vale a pena aqui.
+  let event: { name: string } | null = tenantEvent;
   if (!event) {
     const platformOwnerSession = await getPlatformOwnerSession();
     if (platformOwnerSession) {
