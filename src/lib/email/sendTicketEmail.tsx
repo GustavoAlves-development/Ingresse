@@ -19,8 +19,15 @@ export async function sendTicketEmail(params: {
   eventLocation: string;
   eventStartsAt: Date;
   qrCodeDataUrl: string;
+  ticketId: string;
 }) {
   const resend = getResendClient();
+
+  // Código curto e legível pra digitar/ler em voz alta na portaria caso a
+  // imagem do QR não carregue no cliente de e-mail do comprador. Não é
+  // usado pra validar entrada (isso continua sendo só o qrToken) — é só
+  // uma referência pra equipe localizar o ticket manualmente se precisar.
+  const ticketCode = params.ticketId.slice(0, 8).toUpperCase();
 
   const { error } = await resend.emails.send({
     from: "Plataforma de Ingressos <ingressos@resend.dev>",
@@ -33,6 +40,7 @@ export async function sendTicketEmail(params: {
         eventLocation={params.eventLocation}
         eventStartsAt={params.eventStartsAt}
         qrCodeDataUrl={params.qrCodeDataUrl}
+        ticketCode={ticketCode}
       />
     ),
   });

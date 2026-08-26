@@ -13,6 +13,9 @@ export async function POST(request: Request) {
 
   const dataId = body?.data?.id;
   if (!dataId) {
+    console.error("[webhook mercadopago] rejeitado: sem data.id no body", {
+      body,
+    });
     return NextResponse.json({ error: "missing data.id" }, { status: 400 });
   }
 
@@ -24,6 +27,11 @@ export async function POST(request: Request) {
   });
 
   if (!signatureValid) {
+    console.error("[webhook mercadopago] assinatura inválida", {
+      dataId,
+      xSignature,
+      xRequestId,
+    });
     return NextResponse.json({ error: "invalid signature" }, { status: 401 });
   }
 
@@ -31,17 +39,34 @@ export async function POST(request: Request) {
   // o mesmo formato de data.id — esses não correspondem a um pagamento e
   // fetchPayment falharia. Só processamos notificações de pagamento.
   if (body?.type && body.type !== "payment") {
+    console.log("[webhook mercadopago] ignorado: tipo de evento não é payment", {
+      type: body.type,
+      dataId,
+    });
     return NextResponse.json({ received: true });
   }
 
   const payment = await fetchPayment(String(dataId));
+  console.log("[webhook mercadopago] payment obtido", {
+    dataId,
+    status: payment.status,
+    externalReference: payment.external_reference,
+    transactionAmount: payment.transaction_amount,
+  });
 
   if (payment.status !== "approved") {
+    console.log("[webhook mercadopago] ignorado: status não é approved", {
+      dataId,
+      status: payment.status,
+    });
     return NextResponse.json({ received: true });
   }
 
   const orderId = payment.external_reference;
   if (!orderId) {
+    console.error("[webhook mercadopago] pagamento sem external_reference", {
+      dataId,
+    });
     return NextResponse.json(
       { error: "missing external_reference" },
       { status: 400 },
@@ -50,6 +75,10 @@ export async function POST(request: Request) {
 
   const order = await findOrderById(orderId);
   if (!order) {
+    console.error("[webhook mercadopago] order não encontrada no banco", {
+      dataId,
+      orderId,
+    });
     return NextResponse.json({ received: true });
   }
 
@@ -57,6 +86,12 @@ export async function POST(request: Request) {
   // valor esperado do pedido antes de criar qualquer ticket.
   const paidAmountCents = Math.round((payment.transaction_amount ?? 0) * 100);
   if (paidAmountCents !== order.totalAmountCents) {
+    console.error("[webhook mercadopago] valor pago não bate com o pedido", {
+      dataId,
+      orderId,
+      paidAmountCents,
+      expectedAmountCents: order.totalAmountCents,
+    });
     return NextResponse.json({ error: "amount mismatch" }, { status: 400 });
   }
 
@@ -65,19 +100,48 @@ export async function POST(request: Request) {
     mercadoPagoPaymentId: String(dataId),
   });
 
+  console.log("[webhook mercadopago] pedido processado", {
+    orderId,
+    alreadyProcessed: result.alreadyProcessed,
+    ticketCount: result.tickets.length,
+  });
+
   if (!result.alreadyProcessed) {
     const event = await findEventById(result.order.eventId);
-    if (event) {
+    if (!event) {
+      console.error("[webhook mercadopago] evento não encontrado para o pedido", {
+        orderId,
+        eventId: result.order.eventId,
+      });
+    } else {
       for (const ticket of result.tickets) {
-        const qrCodeDataUrl = await generateQrCodeDataUrl(ticket.qrToken);
-        await sendTicketEmail({
-          buyerEmail: result.order.buyerEmail,
-          buyerName: ticket.buyerName,
-          eventName: event.name,
-          eventLocation: event.location,
-          eventStartsAt: event.startsAt,
-          qrCodeDataUrl,
-        });
+        try {
+          const qrCodeDataUrl = await generateQrCodeDataUrl(ticket.qrToken);
+          await sendTicketEmail({
+            buyerEmail: result.order.buyerEmail,
+            buyerName: ticket.buyerName,
+            eventName: event.name,
+            eventLocation: event.location,
+            eventStartsAt: event.startsAt,
+            qrCodeDataUrl,
+            ticketId: ticket.id,
+          });
+          console.log("[webhook mercadopago] e-mail do ticket enviado", {
+            ticketId: ticket.id,
+            buyerEmail: result.order.buyerEmail,
+          });
+        } catch (err) {
+          // Não deixamos o envio de e-mail falho derrubar o webhook inteiro
+          // (isso faria o Mercado Pago re-tentar e recriar tickets
+          // duplicados via retry). O erro fica registrado no log pra
+          // investigação, e o ticket já criado continua válido mesmo sem
+          // o e-mail ter saído.
+          console.error("[webhook mercadopago] falha ao enviar e-mail do ticket", {
+            ticketId: ticket.id,
+            buyerEmail: result.order.buyerEmail,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
       }
     }
   }

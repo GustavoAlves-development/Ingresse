@@ -10,6 +10,8 @@ export async function createCheckoutPreference(params: {
   ticketPriceCents: number;
   quantity: number;
   notificationUrl: string;
+  eventSlug: string;
+  appUrl: string;
 }) {
   const preference = new Preference(client);
   const result = await preference.create({
@@ -25,6 +27,17 @@ export async function createCheckoutPreference(params: {
       ],
       external_reference: params.orderId,
       notification_url: params.notificationUrl,
+      // Sem back_urls o Mercado Pago não sabe pra onde redirecionar o
+      // comprador de volta — ele fica parado na própria página do MP
+      // mesmo depois do pagamento aprovado. auto_return "approved" faz
+      // o redirect acontecer automaticamente assim que aprovar, sem
+      // esperar o comprador clicar em algum botão.
+      back_urls: {
+        success: `${params.appUrl}/e/${params.eventSlug}?status=success`,
+        pending: `${params.appUrl}/e/${params.eventSlug}?status=pending`,
+        failure: `${params.appUrl}/e/${params.eventSlug}?status=failure`,
+      },
+      auto_return: "approved",
     },
   });
 

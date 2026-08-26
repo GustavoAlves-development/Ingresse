@@ -65,6 +65,8 @@ export async function POST(request: Request) {
     ticketPriceCents: event.ticketPriceCents,
     quantity,
     notificationUrl: `${appUrl}/api/webhooks/mercadopago`,
+    eventSlug: event.slug,
+    appUrl,
   });
 
   return NextResponse.redirect(preference.initPoint, { status: 303 });

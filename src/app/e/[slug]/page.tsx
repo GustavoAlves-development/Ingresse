@@ -31,6 +31,14 @@ export default async function PublicEventPage({
           </AlertDescription>
         </Alert>
       )}
+      {status === "pending" && (
+        <Alert className="border-success/30 bg-success/10">
+          <AlertDescription className="text-success">
+            Pagamento em análise. Você receberá o ingresso por e-mail assim
+            que for aprovado.
+          </AlertDescription>
+        </Alert>
+      )}
       {status === "failure" && (
         <Alert variant="destructive">
           <AlertDescription>
