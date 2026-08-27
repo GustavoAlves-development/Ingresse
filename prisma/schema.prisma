@@ -25,13 +25,15 @@ enum Role {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  organizerId  String
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(PORTARIA_STAFF)
-  createdAt    DateTime @default(now())
+  id                     String    @id @default(uuid())
+  organizerId            String
+  name                   String
+  email                  String    @unique
+  passwordHash           String
+  role                   Role      @default(PORTARIA_STAFF)
+  createdAt              DateTime  @default(now())
+  passwordResetToken     String?   @unique
+  passwordResetExpiresAt DateTime?
 
   organizer       Organizer        @relation(fields: [organizerId], references: [id])
   checkInAttempts CheckInAttempt[]

@@ -36,3 +36,39 @@ export async function listUsersByOrganizer(organizerId: string) {
     orderBy: { createdAt: "asc" },
   });
 }
+
+// "Esqueci a senha": grava um token de uso único com validade curta.
+// Sempre sobrescreve qualquer token anterior desse usuário (um pedido novo
+// invalida o link antigo).
+export async function setPasswordResetToken(
+  userId: string,
+  token: string,
+  expiresAt: Date,
+) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { passwordResetToken: token, passwordResetExpiresAt: expiresAt },
+  });
+}
+
+// Busca só por token — nunca aceita token expirado (comparação de data
+// direto na query, não depois). Retorna null tanto pra "token não existe"
+// quanto pra "token expirado", de propósito: o chamador não precisa (e não
+// deve) diferenciar os dois casos pro usuário.
+export async function findUserByValidResetToken(token: string) {
+  return prisma.user.findFirst({
+    where: { passwordResetToken: token, passwordResetExpiresAt: { gt: new Date() } },
+  });
+}
+
+// Troca a senha e invalida o token (uso único) na mesma operação.
+export async function resetPassword(userId: string, passwordHash: string) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordHash,
+      passwordResetToken: null,
+      passwordResetExpiresAt: null,
+    },
+  });
+}

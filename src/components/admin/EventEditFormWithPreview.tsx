@@ -21,7 +21,7 @@ const STATUS_OPTIONS = [
 ];
 
 const nativeSelectClassName =
-  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
+  "h-8 w-full min-w-0 rounded-lg border border-input bg-secondary px-2.5 py-1 text-base text-foreground transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm";
 
 const DATETIME_LOCAL_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
@@ -214,7 +214,11 @@ export function EventEditFormWithPreview({
                   className={nativeSelectClassName}
                 >
                   {STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <option
+                      key={option.value}
+                      value={option.value}
+                      style={{ backgroundColor: "#1c1c26", color: "#f2f2f5" }}
+                    >
                       {option.label}
                     </option>
                   ))}

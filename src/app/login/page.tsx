@@ -1,4 +1,5 @@
 import { AuthError } from "next-auth";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { signIn } from "@/auth";
@@ -48,9 +49,9 @@ async function loginAction(formData: FormData) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, reset } = await searchParams;
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6">
@@ -60,6 +61,13 @@ export default async function LoginPage({
           <CardDescription>Acesse o painel do seu evento.</CardDescription>
         </CardHeader>
         <CardContent>
+          {reset && (
+            <Alert className="mb-4 border-success/30 bg-success/10">
+              <AlertDescription className="text-success">
+                Senha redefinida com sucesso. Entre com a nova senha.
+              </AlertDescription>
+            </Alert>
+          )}
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertDescription>
@@ -85,6 +93,14 @@ export default async function LoginPage({
               <Button type="submit">Entrar</Button>
             </FieldGroup>
           </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            <Link
+              href="/forgot-password"
+              className="text-primary underline underline-offset-4"
+            >
+              Esqueci a senha
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </main>

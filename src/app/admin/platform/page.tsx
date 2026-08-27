@@ -26,6 +26,13 @@ const STATUS_CLASSES: Record<string, string> = {
 const SELECT_CLASSES =
   "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
+// Selects nativos precisam de fundo sólido (não transparent) — com
+// transparent, o menu suspenso do navegador cai no branco padrão do
+// sistema em vez de herdar o tema escuro, ficando "estourado" contra o
+// resto da página.
+const SELECT_INPUT_CLASSES = `${SELECT_CLASSES} bg-secondary text-foreground`;
+const OPTION_STYLE = { backgroundColor: "#1c1c26", color: "#f2f2f5" };
+
 function parseDateStartOfDay(value?: string): Date | undefined {
   if (!value) return undefined;
   const d = new Date(`${value}T00:00:00-03:00`);
@@ -144,11 +151,11 @@ export default async function PlatformDashboardPage({
                 id="organizerId"
                 name="organizerId"
                 defaultValue={filters.organizerId ?? ""}
-                className={SELECT_CLASSES}
+                className={SELECT_INPUT_CLASSES}
               >
-                <option value="">Todos</option>
+                <option value="" style={OPTION_STYLE}>Todos</option>
                 {organizers.map((org: { id: string; name: string }) => (
-                  <option key={org.id} value={org.id}>
+                  <option key={org.id} value={org.id} style={OPTION_STYLE}>
                     {org.name}
                   </option>
                 ))}
@@ -163,12 +170,12 @@ export default async function PlatformDashboardPage({
                 id="status"
                 name="status"
                 defaultValue={filters.status ?? ""}
-                className={SELECT_CLASSES}
+                className={SELECT_INPUT_CLASSES}
               >
-                <option value="">Todos</option>
-                <option value="DRAFT">Rascunho</option>
-                <option value="PUBLISHED">Publicado</option>
-                <option value="CLOSED">Encerrado</option>
+                <option value="" style={OPTION_STYLE}>Todos</option>
+                <option value="DRAFT" style={OPTION_STYLE}>Rascunho</option>
+                <option value="PUBLISHED" style={OPTION_STYLE}>Publicado</option>
+                <option value="CLOSED" style={OPTION_STYLE}>Encerrado</option>
               </select>
             </div>
 
