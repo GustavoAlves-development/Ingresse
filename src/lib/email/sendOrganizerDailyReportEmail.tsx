@@ -32,12 +32,31 @@ export async function sendOrganizerDailyReportEmail(
 
   const resend = getResendClient();
 
-  const subject = `📊 Resumo do dia (${dateLabel}) — você ganhou ${formatBRLFromCents(line.netCents)}`;
+  // Assunto sem valor em R$ e sem emoji — "você ganhou R$ X" + emoji de
+  // dinheiro no assunto é um padrão clássico de filtro de spam financeiro.
+  // O valor continua bem visível assim que abre o e-mail.
+  const subject = `Resumo de vendas de ${dateLabel} — Ingresse`;
+
+  const eventsSummary = line.events
+    .map((ev) => `- ${ev.eventName}: ${ev.quantity}x`)
+    .join("\n");
+
+  // Versão em texto puro, sem HTML — e-mails só-HTML são penalizados pelos
+  // filtros de spam do Gmail/Resend (ver Resend Deliverability Insights).
+  const text = [
+    `Olá, ${line.organizerName}!`,
+    "",
+    `Resumo do dia ${dateLabel}:`,
+    `Você ganhou: ${formatBRLFromCents(line.netCents)}`,
+    `Ingressos vendidos: ${line.ticketsSold}`,
+    ...(line.events.length > 1 ? ["", eventsSummary] : []),
+  ].join("\n");
 
   const { error } = await resend.emails.send({
     from: "Plataforma de Ingressos <ingressos@ingressebr.site>",
     to: line.organizerEmail,
     subject,
+    text,
     react: <OrganizerDailyReportEmail line={line} dateLabel={dateLabel} />,
   });
 

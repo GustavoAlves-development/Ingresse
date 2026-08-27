@@ -45,10 +45,37 @@ export async function sendTicketEmail(params: {
       ? `Seus ${tickets.length} ingressos para ${params.eventName}`
       : `Seu ingresso para ${params.eventName}`;
 
+  const formattedDate = params.eventStartsAt.toLocaleString("pt-BR", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  });
+
+  // Versão em texto puro, sem HTML — e-mails só-HTML são penalizados pelos
+  // filtros de spam do Gmail/Resend (ver Resend Deliverability Insights).
+  // Também é o que aparece em clientes que não renderizam HTML.
+  const textLines = [
+    `Olá, ${params.buyerName}!`,
+    tickets.length > 1
+      ? `Seus ${tickets.length} ingressos para ${params.eventName} estão confirmados.`
+      : `Seu ingresso para ${params.eventName} está confirmado.`,
+    "",
+    `Local: ${params.eventLocation}`,
+    `Data: ${formattedDate}`,
+    "",
+    "O QR Code de cada ingresso está no corpo deste e-mail (formato HTML).",
+    "Se sua caixa de entrada não estiver mostrando as imagens, use estes códigos na portaria:",
+    ...tickets.map(
+      (t, i) =>
+        `${tickets.length > 1 ? `Ingresso ${i + 1}: ` : "Código: "}${t.ticketCode}`,
+    ),
+  ];
+
   const { error } = await resend.emails.send({
     from: "Plataforma de Ingressos <ingressos@ingressebr.site>",
     to: params.buyerEmail,
     subject,
+    text: textLines.join("\n"),
     react: (
       <TicketEmail
         buyerName={params.buyerName}

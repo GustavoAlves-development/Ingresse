@@ -39,10 +39,37 @@ export async function sendDailyReportEmail(report: DailyReport) {
     from: "Ingresse — Fechamento 💰 <relatorios@ingressebr.site>",
     to: recipient,
     subject,
+    text: buildPlainTextReport(report, realProfitCents),
     react: <DailyReportEmail report={report} />,
   });
 
   if (error) {
     throw new Error(`Falha ao enviar relatório diário: ${error.message}`);
   }
+}
+
+// Versão em texto puro, sem HTML — e-mails só-HTML são penalizados pelos
+// filtros de spam do Gmail/Resend (ver Resend Deliverability Insights).
+function buildPlainTextReport(report: DailyReport, realProfitCents: number): string {
+  if (report.organizers.length === 0) {
+    return `Fechamento do dia — ${report.dateLabel}\n\nNenhuma venda paga registrada hoje.`;
+  }
+
+  const lines = [
+    `Fechamento do dia — ${report.dateLabel}`,
+    "",
+    `Total vendido: ${formatBRLFromCents(report.totals.grossCents)} (${report.totals.ticketsSold} ingressos)`,
+    `Sua comissão (10%): ${formatBRLFromCents(report.totals.platformFeeCents)}`,
+    `Foi pro Mercado Pago: ${formatBRLFromCents(report.totals.mercadoPagoFeeCents)}`,
+    `Seu lucro líquido real: ${formatBRLFromCents(realProfitCents)}`,
+    `A repassar aos organizadores: ${formatBRLFromCents(report.totals.netCents)}`,
+    "",
+    "Por organizador:",
+    ...report.organizers.map(
+      (org) =>
+        `- ${org.organizerName} (${org.organizerEmail}): vendeu ${formatBRLFromCents(org.grossCents)}, você repassa ${formatBRLFromCents(org.netCents)}`,
+    ),
+  ];
+
+  return lines.join("\n");
 }
